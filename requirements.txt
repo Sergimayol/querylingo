@@ -1,0 +1,11 @@
+tqdm
+torch
+torchvision 
+torchaudio
+matplotlib
+scikit-learn
+pandas
+torchinfo
+wandb
+ultralytics
+argparse
