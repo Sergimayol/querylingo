@@ -16,6 +16,7 @@
     - https://huggingface.co/datasets/knowrohit07/know_sql
     - https://huggingface.co/datasets/kaxap/llama2-sql-instruct-sys-prompt
     - https://huggingface.co/datasets/kaxap/pg-gpt4SQL-sql-instructions-1k
+    - https://huggingface.co/datasets/teknium/openhermes
 
 * Kaggle: https://www.kaggle.com/datasets?search=sql
     - https://www.kaggle.com/datasets/thedevastator/dataset-for-developing-natural-language-interfac
@@ -33,13 +34,24 @@ dataset_endpoints = {
     "huggingface-datasets": {
         "base_url": "https://huggingface.co/datasets/",
         "datasets": [
+            {"name": "b-mc2/sql-create-context", "files": ["sql_create_context_v4.json"]},
+            {"name": "Clinton/Text-to-sql-v1", "files": ["texttosqlv2.jsonl"]},
+            {"name": "kaxap/pg-wikiSQL-sql-instructions-80k", "files": ["dev.csv", "test.csv", "train.csv"]},
+            {"name": "bugdaryan/sql-create-context-instruction", "files": ["data/train-00000-of-00001-ea1a61c2db38e8fc.parquet"]},
+            {"name": "stjarvie/question_to_sql_with_ddl_test_2", "files": ["data/test-00000-of-00001-3b465c86756391a8.parquet"]},
+            {"name": "Viswa123/sql_context", "files": ["train.csv"]},
+            {"name": "Rams901/sql-create-context-modified", "files": ["data/train-00000-of-00001-5ac801388cd02781.parquet"]},
+            {"name": "kaxap/llama2-sql-instruct", "files": ["train.csv"]},
+            {"name": "NoobLoader/sql-query-db", "files": ["train.jsonl"]},
+            {"name": "Mohanakrishnan/sql_query_example", "files": ["sql_data_training.csv.csv"]},
+            {"name": "NumbersStation/NSText2SQL", "files": ["train.jsonl"]},
+            {"name": "knowrohit07/know_sql", "files": ["know_sql_val3{ign}.json"]},
+            {"name": "kaxap/llama2-sql-instruct-sys-prompt", "files": ["train.csv"]},
+            {"name": "kaxap/pg-gpt4SQL-sql-instructions-1k", "files": ["train.csv"]},
+            {"name": "teknium/openhermes", "files": ["openhermes.json"]},
             {
-                "name": "b-mc2/sql-create-context",
-                "files": ["sql_create_context_v4.json"],
-            },
-            {
-                "name": "Clinton/Text-to-sql-v1",
-                "files": ["texttosqlv2.jsonl"],
+                "name": "lamini/spider_text_to_sql",
+                "files": ["data/train-00000-of-00001-36a24700f19484dc.parquet", "data/validation-00000-of-00001-fa01d04c056ac579.parquet"],
             },
             {
                 "name": "ChrisHayduk/Llama-2-SQL-Dataset",
@@ -48,61 +60,6 @@ dataset_endpoints = {
                     "data/train-00000-of-00001-922416e34c5bc71c.parquet",
                     "data/val-00000-of-00001-98c87bd893ed1bdb.parquet",
                 ],
-            },
-            {
-                "name": "kaxap/pg-wikiSQL-sql-instructions-80k",
-                "files": ["dev.csv", "test.csv", "train.csv"],
-            },
-            {
-                "name": "bugdaryan/sql-create-context-instruction",
-                "files": ["data/train-00000-of-00001-ea1a61c2db38e8fc.parquet"],
-            },
-            {
-                "name": "lamini/spider_text_to_sql",
-                "files": [
-                    "data/train-00000-of-00001-36a24700f19484dc.parquet",
-                    "data/validation-00000-of-00001-fa01d04c056ac579.parquet",
-                ],
-            },
-            {
-                "name": "stjarvie/question_to_sql_with_ddl_test_2",
-                "files": ["data/test-00000-of-00001-3b465c86756391a8.parquet"],
-            },
-            {
-                "name": "Viswa123/sql_context",
-                "files": ["train.csv"],
-            },
-            {
-                "name": "Rams901/sql-create-context-modified",
-                "files": ["data/train-00000-of-00001-5ac801388cd02781.parquet"],
-            },
-            {
-                "name": "kaxap/llama2-sql-instruct",
-                "files": ["train.csv"],
-            },
-            {
-                "name": "NoobLoader/sql-query-db",
-                "files": ["train.jsonl"],
-            },
-            {
-                "name": "Mohanakrishnan/sql_query_example",
-                "files": ["sql_data_training.csv.csv"],
-            },
-            {
-                "name": "NumbersStation/NSText2SQL",
-                "files": ["train.jsonl"],
-            },
-            {
-                "name": "knowrohit07/know_sql",
-                "files": ["know_sql_val3{ign}.json"],
-            },
-            {
-                "name": "kaxap/llama2-sql-instruct-sys-prompt",
-                "files": ["train.csv"],
-            },
-            {
-                "name": "kaxap/pg-gpt4SQL-sql-instructions-1k",
-                "files": ["train.csv"],
             },
         ],
     },
