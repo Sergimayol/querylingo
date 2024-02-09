@@ -19,18 +19,22 @@ with Timing("fetch_url: "):
 
 
 warnings.filterwarnings("ignore")
-checkpoint = "mistralai/Mistral-7B-Instruct-v0.2"
 checkpoint = "bigscience/bloomz-560m"
 checkpoint = "bigscience/bloom-3b"
+checkpoint = "mistralai/Mistral-7B-Instruct-v0.2"
 device = "cuda"
 
 model = AutoModelForCausalLM.from_pretrained(checkpoint, cache_dir=os.path.join("D:", "models")).to(device)
 tok = AutoTokenizer.from_pretrained(checkpoint)
 
+print("[INFO] Using model:", checkpoint)
+
 while True:
-    _input = input("Q: ")
+    print("Prompt: ")
+    _input = input()
     if _input == "exit":
         break
-    inputs = tok(_input, return_tensors="pt").to("cuda")
-    streamer = TextStreamer(tok)
-    _ = model.generate(**inputs, streamer=streamer, temperature=0.9)
+    with Timing("model.generate: "):
+        inputs = tok(_input, return_tensors="pt").to("cuda")
+        streamer = TextStreamer(tok)
+        _ = model.generate(**inputs, streamer=streamer, temperature=0.9)
