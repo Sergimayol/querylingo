@@ -1,13 +1,14 @@
 from tqdm import tqdm
-from typing import Optional
-import time, contextlib, cProfile, pstats, urllib3  # noqa: E401
+from typing import List, Optional, Dict
+import os, time, contextlib, cProfile, pstats, urllib3, json
 
 
-def fetch_url(url: str, filename: str = None, buffer_size: int = 16384) -> str:
-    if filename is None:
-        filename = url.split("/")[-1]
+def fetch_url(url: str, filename: str = None, buffer_size: int = 16384, force_download: bool = False) -> str:
+    if not force_download and filename is not None and os.path.exists(filename): return filename
+    if filename is None: filename = url.split("/")[-1]
     http = urllib3.PoolManager()
     with http.request("GET", url, preload_content=False) as response, open(filename, "wb") as out_file:
+        if response.status not in range(200, 300): raise Exception(f"Failed to fetch {url}")
         total_size = int(response.headers.get("Content-Length", 0))
         p_bar = tqdm(total=total_size, unit="B", unit_scale=True, unit_divisor=1024, miniters=1)
         for data in response.stream(buffer_size):
@@ -16,20 +17,22 @@ def fetch_url(url: str, filename: str = None, buffer_size: int = 16384) -> str:
         p_bar.close()
     return filename
 
+def load_json(file: str) -> Dict: return json.load(open(file, "r"))
+def assert_dir(dir: str) -> None: assert os.path.exists(dir), f"Directory {dir} does not exist"
+def create_dir(dir: str) -> None: os.makedirs(dir) if not os.path.exists(dir) else None
+def tree_files(dir: str, exclude: List[str]) -> Dict[str, List[str]]: return {os.path.basename(folder): files for folder, _, files in os.walk(dir) if os.path.basename(folder) not in exclude}
+
 
 # https://github.com/tinygrad/tinygrad/blob/ee25f732831b39c64698f8728cfe338ba9662866/tinygrad/helpers.py#L96
 class Timing(contextlib.ContextDecorator):
     def __init__(self, prefix="", on_exit=None, enabled=True):
         self.prefix, self.on_exit, self.enabled = prefix, on_exit, enabled
 
-    def __enter__(self):
-        self.st = time.perf_counter_ns()
+    def __enter__(self): self.st = time.perf_counter_ns()
 
     def __exit__(self, *exc):
         self.et = time.perf_counter_ns() - self.st
-        if self.enabled:
-            print(f"{self.prefix}{self.et*1e-6:.2f} ms" + (self.on_exit(self.et) if self.on_exit else ""))
-
+        if self.enabled: print(f"{self.prefix}{self.et*1e-6:.2f} ms" + (self.on_exit(self.et) if self.on_exit else ""))
 
 # https://github.com/tinygrad/tinygrad/blob/ee25f732831b39c64698f8728cfe338ba9662866/tinygrad/helpers.py#L24
 def colored(st, color: Optional[str], background=False) -> str:
@@ -39,11 +42,8 @@ def colored(st, color: Optional[str], background=False) -> str:
         else st
     )
 
-
 # https://github.com/tinygrad/tinygrad/blob/ee25f732831b39c64698f8728cfe338ba9662866/tinygrad/helpers.py#L103
-def _format_fcn(fcn) -> str:
-    return f"{fcn[0]}:{fcn[1]}:{fcn[2]}"
-
+def _format_fcn(fcn) -> str: return f"{fcn[0]}:{fcn[1]}:{fcn[2]}"
 
 # https://github.com/tinygrad/tinygrad/blob/ee25f732831b39c64698f8728cfe338ba9662866/tinygrad/helpers.py#L104
 class Profiling(contextlib.ContextDecorator):
@@ -52,14 +52,12 @@ class Profiling(contextlib.ContextDecorator):
 
     def __enter__(self):
         self.pr = cProfile.Profile()
-        if self.enabled:
-            self.pr.enable()
+        if self.enabled: self.pr.enable()
 
     def __exit__(self, *exc):
         if self.enabled:
             self.pr.disable()
-            if self.fn:
-                self.pr.dump_stats(self.fn)
+            if self.fn: self.pr.dump_stats(self.fn)
             stats = pstats.Stats(self.pr).strip_dirs().sort_stats(self.sort)
             for fcn in stats.fcn_list[0 : int(len(stats.fcn_list) * self.frac)]:
                 (_, num_calls, tottime, cumtime, callers) = stats.stats[fcn]

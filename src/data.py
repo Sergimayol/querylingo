@@ -28,56 +28,58 @@
     - https://github.com/defog-ai/sql-eval
     - https://github.com/salesforce/WikiSQL/raw/master/data.tar.bz2
 """
+import argparse
+from typing import Dict, List
+from utils import Timing, fetch_url, load_json, create_dir, assert_dir, tree_files
 
-dataset_endpoints = {
-    # https://huggingface.co/datasets/{name}/resolve/main/{files}?download=true
-    "huggingface-datasets": {
-        "base_url": "https://huggingface.co/datasets/",
-        "datasets": [
-            {"name": "b-mc2/sql-create-context", "files": ["sql_create_context_v4.json"]},
-            {"name": "Clinton/Text-to-sql-v1", "files": ["texttosqlv2.jsonl"]},
-            {"name": "kaxap/pg-wikiSQL-sql-instructions-80k", "files": ["dev.csv", "test.csv", "train.csv"]},
-            {"name": "bugdaryan/sql-create-context-instruction", "files": ["data/train-00000-of-00001-ea1a61c2db38e8fc.parquet"]},
-            {"name": "stjarvie/question_to_sql_with_ddl_test_2", "files": ["data/test-00000-of-00001-3b465c86756391a8.parquet"]},
-            {"name": "Viswa123/sql_context", "files": ["train.csv"]},
-            {"name": "Rams901/sql-create-context-modified", "files": ["data/train-00000-of-00001-5ac801388cd02781.parquet"]},
-            {"name": "kaxap/llama2-sql-instruct", "files": ["train.csv"]},
-            {"name": "NoobLoader/sql-query-db", "files": ["train.jsonl"]},
-            {"name": "Mohanakrishnan/sql_query_example", "files": ["sql_data_training.csv.csv"]},
-            {"name": "NumbersStation/NSText2SQL", "files": ["train.jsonl"]},
-            {"name": "knowrohit07/know_sql", "files": ["know_sql_val3{ign}.json"]},
-            {"name": "kaxap/llama2-sql-instruct-sys-prompt", "files": ["train.csv"]},
-            {"name": "kaxap/pg-gpt4SQL-sql-instructions-1k", "files": ["train.csv"]},
-            {"name": "teknium/openhermes", "files": ["openhermes.json"]},
-            {
-                "name": "lamini/spider_text_to_sql",
-                "files": ["data/train-00000-of-00001-36a24700f19484dc.parquet", "data/validation-00000-of-00001-fa01d04c056ac579.parquet"],
-            },
-            {
-                "name": "ChrisHayduk/Llama-2-SQL-Dataset",
-                "files": [
-                    "data/eval-00000-of-00001-6907aec719559d7d.parquet",
-                    "data/train-00000-of-00001-922416e34c5bc71c.parquet",
-                    "data/val-00000-of-00001-98c87bd893ed1bdb.parquet",
-                ],
-            },
-        ],
-    },
-    "kaggle": {
-        "base_url": "https://www.kaggle.com/datasets/",
-        "datasets": [
-            # TODO: Add files
-            "thedevastator/dataset-for-developing-natural-language-interfac",
-            "kaggle/meta-kaggle-code",
-            "thedevastator/understanding-contextual-questions-answers",
-        ],
-    },
-    "github": {
-        "base_url": "https://github.com/",
-        "datasets": [
-            # TODO: Add files
-            "NumbersStationAI/NSQL",
-            "defog-ai/sql-eval",
-        ],
-    },
-}
+
+def get_args():
+    parser = argparse.ArgumentParser(description="Download datasets")
+    parser.add_argument("--data-dir", "-d", type=str, default="data", help="Directory to save the datasets")
+    parser.add_argument("--download", "-dw", type=str, default="none", help="Download datasets from huggingface, kaggle, github, or all", choices=["huggingface", "kaggle", "github", "all", "none"])
+    parser.add_argument("--process", "-p", type=str, default="none", help="Process datasets", choices=["huggingface", "kaggle", "github", "all", "none"])
+    return parser.parse_args()
+
+
+# https://huggingface.co/datasets/{name}/resolve/main/{files}?download=true
+def download_hf_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data") -> list[str]:
+    data_dir = data_dir + "/raw/hf"
+    create_dir(data_dir)
+    for file in dataset["files"]:
+        with Timing(f"fetch_url -> {file}: "):
+            url = f"{base_url}/{dataset['name']}/resolve/main/{file}?download=true"
+            file_name = file.split("/")[1] if "/" in file else file
+            file_name = f"{dataset['name'].split('/')[-1]}-{file_name}"
+            fetch_url(url, data_dir + "/" + file_name)
+
+
+def download_kaggle_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): pass
+
+
+def download_github_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): pass
+
+
+def process_datasets(data_src_dir: str, data_dst_dir: str):
+    data_src_dir = data_src_dir + "/raw"
+    assert_dir(data_src_dir)
+    files_map = tree_files(data_src_dir, exclude=["raw"])
+    create_dir(data_dst_dir)
+    for fd in files_map: 
+        # TODO: Process the datasets
+        print(fd, files_map[fd])
+
+
+if __name__ == "__main__":
+    args = get_args()
+    if args.download != "none":
+        dataset_endpoints = load_json("data/dataset_endpoints.json")
+        hf_ds = dataset_endpoints["huggingface-datasets"]["datasets"]
+        hf_base_url = dataset_endpoints["huggingface-datasets"]["base_url"]
+        print("[INFO] Downloading Hugging Face datasets...")
+        for ds in hf_ds: download_hf_dataset(ds, hf_base_url, args.data_dir)
+        print("[INFO] Done!")
+        # TODO: Add Kaggle and Github datasets
+    if args.process != "none": 
+        print("[INFO] Processing datasets...")
+        process_datasets(args.data_dir, args.data_dir + "/processed")
+        print("[INFO] Done!")
