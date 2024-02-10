@@ -28,9 +28,8 @@
     - https://github.com/defog-ai/sql-eval
     - https://github.com/salesforce/WikiSQL/raw/master/data.tar.bz2
 """
-import argparse, pandas as pd
-from git import Optional
-from typing import Dict, List
+import argparse, pandas as pd, re
+from typing import Any, Dict, List, Optional, Tuple
 from utils import Timing, fetch_url, load_json, create_dir, assert_dir, tree_files, load_jsonl
 
 
@@ -55,10 +54,19 @@ def download_hf_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data
 def download_kaggle_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): pass
 def download_github_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): pass
 
+def _extract_patterns(text) -> Optional[Tuple[str | Any, ...]]:
+    match = re.compile(r'###question:(.*?)###answer:(.*?)###context:(.*?)$', re.DOTALL).search(text)
+    return match.groups() if match else None
+
 def _process_csv(file: str) -> Optional[pd.DataFrame]:
     df = pd.read_csv(file)
     cols = df.columns
-    if len(cols) < 3: return None
+    if len(cols) < 3:
+        if "combined_text" in cols: # Patern: ###question: ... ###answer: ... ###context: ...
+            df[["question", "answer", "context"]] = df["combined_text"].apply(_extract_patterns).apply(pd.Series)
+            df.rename(columns={"combined_text": "extra"}, inplace=True)
+            return df[["question", "context", "answer", "extra"]]
+        else: return None # System prompt, SQL, etc -> Instruct datasets
     if len(cols) > 3:
         df["extra"] = df[cols[3:]].apply(lambda x: " ".join(x.dropna().astype(str)), axis=1)
         df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
@@ -76,7 +84,13 @@ def _process_json(file: str) -> pd.DataFrame:
 def _process_jsonl(file: str) -> Optional[pd.DataFrame]:
     df = pd.DataFrame(load_jsonl(file))
     cols = df.columns
-    if len(cols) < 3: return None
+    if len(cols) < 3:
+        if "Questions" in cols:
+            df["extra"] = "NULL"
+            df["context"] = "NULL"
+            df.rename(columns={"Questions": "question", cols[1]: "anwser"}, inplace=True)
+            return df[["question", "context", "anwser", "extra"]]
+        else: return None # Unknown format
     if len(cols) > 3:
         df["extra"] = df[cols[3:]].apply(lambda x: " ".join(x.dropna().astype(str)), axis=1)
         df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
@@ -87,7 +101,7 @@ def _process_jsonl(file: str) -> Optional[pd.DataFrame]:
 def _process_parquet(file: str) -> Optional[pd.DataFrame]:
     df = pd.read_parquet(file)
     cols = df.columns
-    if len(cols) < 3: return None
+    if len(cols) < 3: return None # Instructions, SQL, etc -> Instruct datasets
     if len(cols) > 3:
         df["extra"] = df[cols[3:]].apply(lambda x: " ".join(x.dropna().astype(str)), axis=1)
         df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
@@ -106,11 +120,12 @@ def process_datasets(data_src_dir: str, data_dst_dir: str):
             print(f"[INFO] Processing {file}...")
             with Timing(f"[INFO] {file} processed in: "):
                 ext, df = file.split(".")[-1], None
+                # TODO: See what to do with the Instruction datasets, for now just skip them
                 if ext == "csv": df = _process_csv(f"{data_src_dir}/{fd}/{file}")
                 elif ext == "json": df = _process_json(f"{data_src_dir}/{fd}/{file}")
                 elif ext == "jsonl": df = _process_jsonl(f"{data_src_dir}/{fd}/{file}")
                 elif ext == "parquet": df = _process_parquet(f"{data_src_dir}/{fd}/{file}")
-                else: pass
+                else: pass # Skip unknown formats
                 if df is not None: df.to_csv(f"{data_dst_dir}/{fd}/{file.replace(f'.{ext}', '.csv')}", index=False)
                 else: print(f"[WARN] Unable to process {file}...")
 
