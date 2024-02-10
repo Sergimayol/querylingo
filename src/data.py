@@ -104,15 +104,15 @@ def process_datasets(data_src_dir: str, data_dst_dir: str):
         create_dir(f"{data_dst_dir}/{fd}")
         for file in files_map[fd]:
             print(f"[INFO] Processing {file}...")
-            ext = file.split(".")[-1]
-            df = None
-            if ext == "csv": df = _process_csv(f"{data_src_dir}/{fd}/{file}")
-            elif ext == "json": df = _process_json(f"{data_src_dir}/{fd}/{file}")
-            elif ext == "jsonl": df = _process_jsonl(f"{data_src_dir}/{fd}/{file}")
-            elif ext == "parquet": df = _process_parquet(f"{data_src_dir}/{fd}/{file}")
-            else: pass
-            if df is not None: df.to_csv(f"{data_dst_dir}/{fd}/{file.replace(f'.{ext}', '.csv')}", index=False)
-            else: print(f"[WARN] Unable to process {file}...")
+            with Timing(f"[INFO] {file} processed in: "):
+                ext, df = file.split(".")[-1], None
+                if ext == "csv": df = _process_csv(f"{data_src_dir}/{fd}/{file}")
+                elif ext == "json": df = _process_json(f"{data_src_dir}/{fd}/{file}")
+                elif ext == "jsonl": df = _process_jsonl(f"{data_src_dir}/{fd}/{file}")
+                elif ext == "parquet": df = _process_parquet(f"{data_src_dir}/{fd}/{file}")
+                else: pass
+                if df is not None: df.to_csv(f"{data_dst_dir}/{fd}/{file.replace(f'.{ext}', '.csv')}", index=False)
+                else: print(f"[WARN] Unable to process {file}...")
 
 if __name__ == "__main__":
     args = get_args()
