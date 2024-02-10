@@ -28,9 +28,10 @@
     - https://github.com/defog-ai/sql-eval
     - https://github.com/salesforce/WikiSQL/raw/master/data.tar.bz2
 """
-import argparse
+import argparse, pandas as pd
+from git import Optional
 from typing import Dict, List
-from utils import Timing, fetch_url, load_json, create_dir, assert_dir, tree_files
+from utils import Timing, fetch_url, load_json, create_dir, assert_dir, tree_files, load_jsonl
 
 
 def get_args():
@@ -39,7 +40,6 @@ def get_args():
     parser.add_argument("--download", "-dw", type=str, default="none", help="Download datasets from huggingface, kaggle, github, or all", choices=["huggingface", "kaggle", "github", "all", "none"])
     parser.add_argument("--process", "-p", type=str, default="none", help="Process datasets", choices=["huggingface", "kaggle", "github", "all", "none"])
     return parser.parse_args()
-
 
 # https://huggingface.co/datasets/{name}/resolve/main/{files}?download=true
 def download_hf_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data") -> list[str]:
@@ -52,22 +52,67 @@ def download_hf_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data
             file_name = f"{dataset['name'].split('/')[-1]}-{file_name}"
             fetch_url(url, data_dir + "/" + file_name)
 
-
 def download_kaggle_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): pass
-
-
 def download_github_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): pass
 
+def _process_csv(file: str, swap_cols: bool = False) -> Optional[pd.DataFrame]:
+    df = pd.read_csv(file)
+    cols = df.columns
+    if len(cols) < 3: return None
+    if len(cols) > 3:
+        df["extra"] = df[cols[3:]].apply(lambda x: " ".join(x.dropna().astype(str)), axis=1)
+        df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
+    else: df["extra"] = "NULL"
+    if swap_cols: df = df[[cols[0], cols[2], cols[1], "extra"]]
+    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "anwser"}, inplace=True)
+    return df
+
+def _process_json(file: str) -> pd.DataFrame:
+    df = pd.read_json(file)
+    cols = df.columns
+    df["extra"] = "NULL"
+    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "anwser"}, inplace=True)
+    return df
+
+def _process_jsonl(file: str) -> Optional[pd.DataFrame]:
+    df = pd.DataFrame(load_jsonl(file))
+    cols = df.columns
+    if len(cols) < 3: return None
+    if len(cols) > 3:
+        df["extra"] = df[cols[3:]].apply(lambda x: " ".join(x.dropna().astype(str)), axis=1)
+        df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
+    else: df["extra"] = "NULL"
+    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "anwser"}, inplace=True)
+    return df
+
+def _process_parquet(file: str) -> Optional[pd.DataFrame]:
+    df = pd.read_parquet(file)
+    cols = df.columns
+    if len(cols) < 3: return None
+    if len(cols) > 3:
+        df["extra"] = df[cols[3:]].apply(lambda x: " ".join(x.dropna().astype(str)), axis=1)
+        df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
+    else: df["extra"] = "NULL"
+    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "anwser"}, inplace=True)
+    return df
 
 def process_datasets(data_src_dir: str, data_dst_dir: str):
     data_src_dir = data_src_dir + "/raw"
     assert_dir(data_src_dir)
-    files_map = tree_files(data_src_dir, exclude=["raw"])
-    create_dir(data_dst_dir)
-    for fd in files_map: 
-        # TODO: Process the datasets
-        print(fd, files_map[fd])
-
+    files_map = tree_files(data_src_dir, exclude=["raw"]) 
+    for fd in files_map:
+        create_dir(f"{data_dst_dir}/{fd}")
+        for file in files_map[fd]:
+            print(f"[INFO] Processing {file}...")
+            ext = file.split(".")[-1]
+            df = None
+            if ext == "csv": df = _process_csv(f"{data_src_dir}/{fd}/{file}")
+            elif ext == "json": df = _process_json(f"{data_src_dir}/{fd}/{file}")
+            elif ext == "jsonl": df = _process_jsonl(f"{data_src_dir}/{fd}/{file}")
+            elif ext == "parquet": df = _process_parquet(f"{data_src_dir}/{fd}/{file}")
+            else: pass
+            if df is not None: df.to_csv(f"{data_dst_dir}/{fd}/{file.replace(f'.{ext}', '.csv')}", index=False)
+            else: print(f"[WARN] Unable to process {file}...")
 
 if __name__ == "__main__":
     args = get_args()

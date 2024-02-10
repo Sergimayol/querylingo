@@ -9,3 +9,4 @@ torchinfo
 wandb
 ultralytics
 argparse
+pyarrow
