@@ -55,7 +55,7 @@ def download_hf_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data
 def download_kaggle_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): pass
 def download_github_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): pass
 
-def _process_csv(file: str, swap_cols: bool = False) -> Optional[pd.DataFrame]:
+def _process_csv(file: str) -> Optional[pd.DataFrame]:
     df = pd.read_csv(file)
     cols = df.columns
     if len(cols) < 3: return None
@@ -63,7 +63,6 @@ def _process_csv(file: str, swap_cols: bool = False) -> Optional[pd.DataFrame]:
         df["extra"] = df[cols[3:]].apply(lambda x: " ".join(x.dropna().astype(str)), axis=1)
         df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
     else: df["extra"] = "NULL"
-    if swap_cols: df = df[[cols[0], cols[2], cols[1], "extra"]]
     df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "anwser"}, inplace=True)
     return df
 
@@ -93,6 +92,7 @@ def _process_parquet(file: str) -> Optional[pd.DataFrame]:
         df["extra"] = df[cols[3:]].apply(lambda x: " ".join(x.dropna().astype(str)), axis=1)
         df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
     else: df["extra"] = "NULL"
+    df = df[[cols[0], cols[2], cols[1], "extra"]]
     df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "anwser"}, inplace=True)
     return df
 
