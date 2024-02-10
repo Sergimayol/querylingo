@@ -63,7 +63,7 @@
             }
         ]
     },
-    "kaggle": {
+    "kaggle-datasets": {
         "base_url": "https://www.kaggle.com/datasets",
         "datasets": [
             "thedevastator/dataset-for-developing-natural-language-interfac",
@@ -71,7 +71,7 @@
             "thedevastator/understanding-contextual-questions-answers"
         ]
     },
-    "github": {
+    "github-datasets": {
         "base_url": "https://github.com",
         "datasets": ["NumbersStationAI/NSQL", "defog-ai/sql-eval"]
     }

@@ -28,7 +28,7 @@
     - https://github.com/defog-ai/sql-eval
     - https://github.com/salesforce/WikiSQL/raw/master/data.tar.bz2
 """
-import argparse, pandas as pd, re
+import argparse, pandas as pd, re, sqlite3
 from typing import Any, Dict, List, Optional, Tuple
 from utils import Timing, fetch_url, load_json, create_dir, assert_dir, tree_files, load_jsonl
 
@@ -38,6 +38,7 @@ def get_args():
     parser.add_argument("--data-dir", "-d", type=str, default="data", help="Directory to save the datasets")
     parser.add_argument("--download", "-dw", type=str, default="none", help="Download datasets from huggingface, kaggle, github, or all", choices=["huggingface", "kaggle", "github", "all", "none"])
     parser.add_argument("--process", "-p", type=str, default="none", help="Process datasets", choices=["huggingface", "kaggle", "github", "all", "none"])
+    parser.add_argument("--export", "-e", type=str, default="none", help="Export datasets to SQL", choices=["huggingface", "kaggle", "github", "all", "none"])
     return parser.parse_args()
 
 # https://huggingface.co/datasets/{name}/resolve/main/{files}?download=true
@@ -51,8 +52,8 @@ def download_hf_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data
             file_name = f"{dataset['name'].split('/')[-1]}-{file_name}"
             fetch_url(url, data_dir + "/" + file_name)
 
-def download_kaggle_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): pass
-def download_github_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): pass
+def download_kaggle_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): print("Not implemented yet")
+def download_github_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data_dir="data"): print("Not implemented yet")
 
 def _extract_patterns(text) -> Optional[Tuple[str | Any, ...]]:
     match = re.compile(r'###question:(.*?)###answer:(.*?)###context:(.*?)$', re.DOTALL).search(text)
@@ -129,6 +130,28 @@ def process_datasets(data_src_dir: str, data_dst_dir: str):
                 if df is not None: df.to_csv(f"{data_dst_dir}/{fd}/{file.replace(f'.{ext}', '.csv')}", index=False)
                 else: print(f"[WARN] Unable to process {file}...")
 
+def export_processed_datasets(data_src_dir: str, data_dst_dir: str):
+    data_src_dir = data_src_dir + "/processed"
+    assert_dir(data_src_dir)
+    files_map = tree_files(data_src_dir, exclude=["processed"])
+    files_map = {fd: [f for f in files_map[fd] if not f.endswith(".sqlite")] for fd in files_map}
+    all_dfs = []
+    db_uri = f"{data_dst_dir}/datasets.sqlite"
+    conn = sqlite3.connect(db_uri)
+    for fd in files_map:
+        create_dir(f"{data_dst_dir}/{fd}")
+        for file in files_map[fd]:
+            print(f"[INFO] Exporting {file} to SQL ({db_uri}) ...")
+            with Timing(f"[INFO] {file} exported in: "):
+                df = pd.read_csv(f"{data_src_dir}/{fd}/{file}")
+                all_dfs.append(df)
+                df.to_sql(file.replace(".csv", ""), conn, if_exists="replace", index=False)
+    print(f"[INFO] Exporting all datasets to SQL ({db_uri}) ...")
+    with Timing("[INFO] All datasets exported in: "):
+        pd.concat(all_dfs).to_sql("all_datasets", conn, if_exists="replace", index=False)
+    conn.close()
+
+
 if __name__ == "__main__":
     args = get_args()
     if args.download != "none":
@@ -138,8 +161,21 @@ if __name__ == "__main__":
         print("[INFO] Downloading Hugging Face datasets...")
         for ds in hf_ds: download_hf_dataset(ds, hf_base_url, args.data_dir)
         print("[INFO] Done!")
-        # TODO: Add Kaggle and Github datasets
+        kg_ds = dataset_endpoints["kaggle-datasets"]["datasets"]
+        kg_base_url = dataset_endpoints["kaggle-datasets"]["base_url"]
+        print("[INFO] Downloading Kaggle datasets...")
+        for ds in kg_ds: download_kaggle_dataset(ds, kg_base_url, args.data_dir)
+        print("[INFO] Done!")
+        gh_ds = dataset_endpoints["github-datasets"]["datasets"]
+        gh_base_url = dataset_endpoints["github-datasets"]["base_url"]
+        print("[INFO] Downloading Github datasets...")
+        for ds in gh_ds: download_github_dataset(ds, gh_base_url, args.data_dir)
+        print("[INFO] Done!")
     if args.process != "none": 
         print("[INFO] Processing datasets...")
-        process_datasets(args.data_dir, args.data_dir + "/processed")
+        process_datasets(args.data_dir, f"{args.data_dir}/processed")
+        print("[INFO] Done!")
+    if args.export != "none":
+        print("[INFO] Exporting datasets to SQL...")
+        export_processed_datasets(args.data_dir, f"{args.data_dir}/processed")
         print("[INFO] Done!")

@@ -7,7 +7,7 @@ def fetch_url(url: str, filename: str = None, buffer_size: int = 16384, force_do
     if not force_download and filename is not None and os.path.exists(filename): return filename
     if filename is None: filename = url.split("/")[-1]
     http = urllib3.PoolManager()
-    with http.request("GET", url, preload_content=False) as response, open(filename, "wb", encoding="utf-8") as out_file:
+    with http.request("GET", url, preload_content=False) as response, open(filename, "wb") as out_file:
         if response.status not in range(200, 300): raise Exception(f"Failed to fetch {url}")
         total_size = int(response.headers.get("Content-Length", 0))
         p_bar = tqdm(total=total_size, unit="B", unit_scale=True, unit_divisor=1024, miniters=1)
@@ -21,7 +21,7 @@ def load_json(file: str) -> Dict: return json.load(open(file, "r"))
 def load_jsonl(file: str) -> List: return [json.loads(line) for line in open(file, "r", encoding="utf-8")]
 def assert_dir(dir: str) -> None: assert os.path.exists(dir), f"Directory {dir} does not exist"
 def create_dir(dir: str) -> None: os.makedirs(dir) if not os.path.exists(dir) else None
-def tree_files(dir: str, exclude: List[str]) -> Dict[str, List[str]]: return {os.path.basename(folder): files for folder, _, files in os.walk(dir) if os.path.basename(folder) not in exclude}
+def tree_files(dir: str, exclude: List[str] = None) -> Dict[str, List[str]]: return {os.path.basename(folder): files for folder, _, files in os.walk(dir) if os.path.basename(folder) not in exclude}
 
 # https://github.com/tinygrad/tinygrad/blob/ee25f732831b39c64698f8728cfe338ba9662866/tinygrad/helpers.py#L96
 class Timing(contextlib.ContextDecorator):
