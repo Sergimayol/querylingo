@@ -1,23 +1,18 @@
 # pip install -q transformers accelerate
-import torch, os, warnings  # noqa: E401
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer, LlamaTokenizer, LlamaForCausalLM
-from utils import fetch_url, Timing, Profiling
-from data import dataset_endpoints
+import os, warnings  # noqa: E401
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
+from utils import Timing
+from safetensors import safe_open
 
-"""
-with Timing("fetch_url: "):
-    fetch_url("https://thor.robots.ox.ac.uk/~vgg/data/pets/images.tar.gz")
+tensors = {}
+with safe_open("model.safetensors", framework="pt", device="cpu") as f:
+    for key in f.keys(): tensors[key] = f.get_tensor(key)
 
-with Profiling(enabled=True):
-    fetch_url("https://thor.robots.ox.ac.uk/~vgg/data/pets/annotations.tar.gz")
+with open("keys.txt", "w") as f: 
+    # Write the keys with the size of the tensor
+    f.write("\n".join([f"{key}: {tensors[key].size()}" for key in tensors.keys()]))
 
-with Timing("fetch_url: "):
-    dataset = dataset_endpoints["huggingface-datasets"]["datasets"][2]
-    for file in dataset["files"]:
-        fetch_url(f"https://huggingface.co/datasets/{dataset['name']}/resolve/main/{file}?download=true", file)
-"""
-
-
+exit()
 warnings.filterwarnings("ignore")
 checkpoint = "bigscience/bloomz-560m"
 checkpoint = "bigscience/bloom-3b"
@@ -25,7 +20,7 @@ checkpoint = "mistralai/Mistral-7B-Instruct-v0.2"
 device = "cuda"
 
 model = AutoModelForCausalLM.from_pretrained(checkpoint, cache_dir=os.path.join("D:", "models")).to(device)
-tok = AutoTokenizer.from_pretrained(checkpoint)
+tok = AutoTokenizer.from_pretrained(checkpoint, load_in_8bit=True)
 
 print("[INFO] Using model:", checkpoint)
 
