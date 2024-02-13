@@ -1,5 +1,7 @@
 from tqdm import tqdm
+from torch import Tensor
 from typing import List, Optional, Dict
+from safetensors import safe_open
 import os, time, contextlib, cProfile, pstats, urllib3, json
 
 DEBUG = int(os.getenv("DEBUG", 0)) # 0, ..., 3
@@ -23,6 +25,11 @@ def load_jsonl(file: str) -> List: return [json.loads(line) for line in open(fil
 def assert_dir(dir: str) -> None: assert os.path.exists(dir), f"Directory {dir} does not exist"
 def create_dir(dir: str) -> None: os.makedirs(dir) if not os.path.exists(dir) else None
 def tree_files(dir: str, exclude: List[str] = None) -> Dict[str, List[str]]: return {os.path.basename(folder): files for folder, _, files in os.walk(dir) if os.path.basename(folder) not in exclude}
+def load_safetenors(file: str, device="cpu") -> Dict[str, Tensor]:
+    tensors = {}
+    with safe_open(file, framework="pt", device=device) as f:
+        for key in f.keys(): tensors[key] = f.get_tensor(key) 
+    return tensors
 
 # https://github.com/tinygrad/tinygrad/blob/ee25f732831b39c64698f8728cfe338ba9662866/tinygrad/helpers.py#L96
 class Timing(contextlib.ContextDecorator):
