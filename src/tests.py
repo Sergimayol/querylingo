@@ -4,24 +4,54 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
 from utils import Timing, load_safetenors
 from safetensors import safe_open
 
+"""
 tensors = {}
 tensors = load_safetenors("model.safetensors")
 with open("keys.txt", "w") as f:
     # Write the keys with the size of the tensor
     f.write("\n".join([f"{key}: {tensors[key].size()}" for key in tensors.keys()]))
+"""
+
+device = "cuda"  # the device to load the model onto
+
+model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.2", cache_dir=os.path.join("D:", "models"))
+tok = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.2")
+
+messages = [
+    {"role": "user", "content": "What is your favourite condiment?"},
+    {
+        "role": "assistant",
+        "content": "Well, I'm quite partial to a good squeeze of fresh lemon juice. It adds just the right amount of zesty flavour to whatever I'm cooking up in the kitchen!",
+    },
+    {"role": "user", "content": "Do you have mayonnaise recipes?"},
+]
+
+encodeds = tok.apply_chat_template(messages, return_tensors="pt")
+
+model.to(device)
+
+while True:
+    print("Prompt: ")
+    _input = input()
+    if _input == "exit":
+        break
+    with Timing("model.generate: "):
+        inputs = encodeds.to(device)
+        streamer = TextStreamer(tok)
+        _ = model.generate(inputs, streamer=streamer, temperature=0.9, max_new_tokens=1000)
+
+exit()
 
 warnings.filterwarnings("ignore")
-"""
 checkpoint = "bigscience/bloomz-560m"
-checkpoint = "mistralai/Mistral-7B-Instruct-v0.2"
 checkpoint = "bigscience/bloom-3b"
+checkpoint = "mistralai/Mistral-7B-Instruct-v0.2"
 device = "cuda"
 
 model = AutoModelForCausalLM.from_pretrained(checkpoint, cache_dir=os.path.join("D:", "models")).to(device)
 tok = AutoTokenizer.from_pretrained(checkpoint)
 
 print(model)
-exit()
 
 print("[INFO] Using model:", checkpoint)
 
@@ -34,7 +64,7 @@ while True:
         inputs = tok(_input, return_tensors="pt").to("cuda")
         streamer = TextStreamer(tok)
         _ = model.generate(**inputs, streamer=streamer, temperature=0.9)
-"""
+exit()
 
 
 class BloomAttention(nn.Module):
