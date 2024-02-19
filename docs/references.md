@@ -6,3 +6,9 @@
 -   https://github.com/hkproj/pytorch-llama (Llama 2)
 -   https://miro.medium.com/v2/resize:fit:720/format:webp/1*g9cykAlrYrNkG-rVTIKQ2Q.png
 -   https://github.com/graykode/gpt-2-Pytorch
+
+## Videos
+
+-   https://www.youtube.com/watch?v=M6adRGJe5cQ
+-   https://www.youtube.com/watch?v=iDulhoQ2pro
+-   https://www.youtube.com/watch?v=U0s0f995w14
