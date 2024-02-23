@@ -1,10 +1,12 @@
 from tqdm import tqdm
-from torch import Tensor
+from torch import Tensor, device
 from typing import List, Optional, Dict
 from safetensors import safe_open
 import os, time, contextlib, cProfile, pstats, urllib3, json
 
 DEBUG = int(os.getenv("DEBUG", 0)) # 0, ..., 3
+CACHE_DIR = os.getenv("CACHE_DIR", os.path.expanduser("~/.cache"))
+DEVICE = os.getenv("DEVICE", "cpu") # "cpu" or "cuda"
 
 def fetch_url(url: str, filename: str = None, buffer_size: int = 16384, force_download: bool = False) -> str:
     if not force_download and filename is not None and os.path.exists(filename): return filename
@@ -20,6 +22,7 @@ def fetch_url(url: str, filename: str = None, buffer_size: int = 16384, force_do
         p_bar.close()
     return filename
 
+def pt_device(dev: str = DEVICE) -> device: return device(dev)
 def load_json(file: str) -> Dict: return json.load(open(file, "r"))
 def load_jsonl(file: str) -> List: return [json.loads(line) for line in open(file, "r", encoding="utf-8")]
 def assert_dir(dir: str) -> None: assert os.path.exists(dir), f"Directory {dir} does not exist"
@@ -37,7 +40,6 @@ def write_sf_keys(file: str, tensors: Dict[str, Tensor], verbose=False) -> None:
     with open(file, "w") as f:
         t = tqdm(tensors.keys(), desc="Writing keys", disable=not verbose)
         f.write("\n".join([f"{key}: {tensors[key].size()}" for key in t]))
-
 
 # https://github.com/tinygrad/tinygrad/blob/ee25f732831b39c64698f8728cfe338ba9662866/tinygrad/helpers.py#L96
 class Timing(contextlib.ContextDecorator):

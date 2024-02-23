@@ -27,13 +27,13 @@
     - https://huggingface.co/openai-community/gpt2-xl
 """
 
+from typing import Literal
 from torch import tril, ones
 from torch.nn import Module, Linear, GELU, LayerNorm, Embedding, ModuleList
-from utils import load_safetenors, write_sf_keys
-from config import ModelConfig
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-tensors = load_safetenors("model.safetensors", verbose=True)
-write_sf_keys("keys.txt", tensors, verbose=True)
+from .config import ModelConfig
+from utils import CACHE_DIR
 
 
 class MLP(Module):
@@ -73,3 +73,23 @@ class Transformer(Module):
         self.wte = Embedding(config.vocab_size, self.n_embd)
         self.h = ModuleList([TransformerBlock(self.n_embd, config.eps, config.n_ctx, config.n_head, scale=True) for _ in range(self.n_layer)])
         self.ln_f = LayerNorm(self.n_embd, eps=config.eps)
+
+
+# GPT2 wrapper from HuggingFace
+class GPT2Wrapper(Module):
+    def __init__(self, checkpoint: Literal["gpt2", "gpt2-large", "gpt2-medium", "gpt2-xl"] = "gpt2"):
+        super(GPT2Wrapper, self).__init__()
+        self.model = GPT2LMHeadModel.from_pretrained(checkpoint, cache_dir=CACHE_DIR)
+        self.tokenizer = GPT2Tokenizer.from_pretrained(checkpoint)
+
+    def forward(self, input_ids):
+        return self.model(input_ids)
+
+    def generate(self, input_ids, attention_mask, max_length=50):
+        return self.model.generate(input_ids, attention_mask=attention_mask, max_length=max_length)
+
+    def decode(self, input_ids):
+        return self.tokenizer.decode(input_ids, skip_special_tokens=True)
+
+    def encode(self, text):
+        return self.tokenizer.encode(text, return_tensors="pt")
