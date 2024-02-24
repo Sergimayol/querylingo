@@ -28,23 +28,36 @@
     - https://github.com/defog-ai/sql-eval
     - https://github.com/salesforce/WikiSQL/raw/master/data.tar.bz2
 """
-import argparse, pandas as pd, re, sqlite3
+import argparse, pandas as pd, re, sqlite3, torch
 from typing import Any, Dict, List, Optional, Tuple
+from transformers import PreTrainedTokenizer
 from utils import Timing, fetch_url, load_json, create_dir, assert_dir, tree_files, load_jsonl, DEBUG
 from torch.utils.data import Dataset
 
 
 class TextToSQLDataset(Dataset):
-    def __init__(self, data_dir: str, file: str = "text_to_sql.csv", as_completition: bool = True):
-        self.content, self.as_completition = pd.read_csv(f"{data_dir}/{file}"), as_completition
+    def __init__(self, file: str, tokenizer: PreTrainedTokenizer):
+        self.content = pd.read_csv(file)
+        self.tokenizer = tokenizer
 
     def __len__(self): return len(self.content)
 
     def __getitem__(self, idx):
-        if self.as_completition:
-            row = self.content.iloc[idx]
-            return f"###question: {row['question']} ###context: {row['context']}", f"###answer: {row['answer']}"
-        return self.content.iloc[idx]
+        row = self.content.iloc[idx]
+        input = f"###question: {row['question']} ###context: {row['context']}"
+        target = f" ###answer: {row['anwser']}<EOQ>"
+        inputs, targets  = self.tokenizer(input, return_tensors="pt"), self.tokenizer(target, return_tensors="pt") 
+        inputs, targets = inputs["input_ids"], targets["input_ids"]
+        # [(input_toks, target_toks[:i]), ..., (input_toks+target_toks[len(target_toks-1)], target_toks[-1])]
+        t_inputs, t_targets = [], []
+        for i in range(0, len(targets[0])):
+            t_inputs.append((torch.cat([inputs[0], targets[0][:i]]),) if i > 1 else (inputs[0],))
+            t_targets.append((targets[0][i],))
+        if DEBUG >= 4:
+            for i in range(len(t_inputs)):
+                print(f"Input: {self.tokenizer.decode(t_inputs[i][0])}")
+                print(f"Target: {self.tokenizer.decode(t_targets[i][0])}")
+        return t_inputs, t_targets
 
 
 # SQL instructions in form of system prompts

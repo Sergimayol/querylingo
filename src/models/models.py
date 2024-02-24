@@ -27,7 +27,7 @@
     - https://huggingface.co/openai-community/gpt2-xl
 """
 
-from typing import Literal
+from typing import Dict, Literal
 from torch import tril, ones
 from torch.nn import Module, Linear, GELU, LayerNorm, Embedding, ModuleList
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
@@ -80,10 +80,10 @@ class GPT2Wrapper(Module):
     def __init__(self, checkpoint: Literal["gpt2", "gpt2-large", "gpt2-medium", "gpt2-xl"] = "gpt2"):
         super(GPT2Wrapper, self).__init__()
         self.model = GPT2LMHeadModel.from_pretrained(checkpoint, cache_dir=CACHE_DIR)
-        self.tokenizer = GPT2Tokenizer.from_pretrained(checkpoint)
+        self.tokenizer: GPT2Tokenizer = GPT2Tokenizer.from_pretrained(checkpoint)
 
-    def forward(self, input_ids):
-        return self.model(input_ids)
+    def forward(self, input_ids, **kwargs):
+        return self.model(input_ids, **kwargs)
 
     def generate(self, input_ids, attention_mask, max_length=50):
         return self.model.generate(input_ids, attention_mask=attention_mask, max_length=max_length)
@@ -91,5 +91,5 @@ class GPT2Wrapper(Module):
     def decode(self, input_ids):
         return self.tokenizer.decode(input_ids, skip_special_tokens=True)
 
-    def encode(self, text):
+    def encode(self, text) -> Dict:
         return self.tokenizer.encode(text, return_tensors="pt")
