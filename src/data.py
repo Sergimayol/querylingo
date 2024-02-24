@@ -30,7 +30,33 @@
 """
 import argparse, pandas as pd, re, sqlite3
 from typing import Any, Dict, List, Optional, Tuple
-from utils import Timing, fetch_url, load_json, create_dir, assert_dir, tree_files, load_jsonl
+from utils import Timing, fetch_url, load_json, create_dir, assert_dir, tree_files, load_jsonl, DEBUG
+from torch.utils.data import Dataset
+
+
+class TextToSQLDataset(Dataset):
+    def __init__(self, data_dir: str, file: str = "text_to_sql.csv", as_completition: bool = True):
+        self.content, self.as_completition = pd.read_csv(f"{data_dir}/{file}"), as_completition
+
+    def __len__(self): return len(self.content)
+
+    def __getitem__(self, idx):
+        if self.as_completition:
+            row = self.content.iloc[idx]
+            return f"###question: {row['question']} ###context: {row['context']}", f"###answer: {row['answer']}"
+        return self.content.iloc[idx]
+
+
+# SQL instructions in form of system prompts
+class SystemPromptDataset(Dataset):
+    def __init__(self):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __getitem__(self, idx):
+        pass
 
 
 def get_args():
@@ -46,7 +72,7 @@ def download_hf_dataset(dataset: List[Dict[str, List[str]]], base_url: str, data
     data_dir = data_dir + "/raw/hf"
     create_dir(data_dir)
     for file in dataset["files"]:
-        with Timing(f"fetch_url -> {file}: "):
+        with Timing(f"fetch_url -> {file}: ", DEBUG >= 1):
             url = f"{base_url}/{dataset['name']}/resolve/main/{file}?download=true"
             file_name = file.split("/")[1] if "/" in file else file
             file_name = f"{dataset['name'].split('/')[-1]}-{file_name}"
@@ -119,7 +145,7 @@ def process_datasets(data_src_dir: str, data_dst_dir: str):
         create_dir(f"{data_dst_dir}/{fd}")
         for file in files_map[fd]:
             print(f"[INFO] Processing {file}...")
-            with Timing(f"[INFO] {file} processed in: "):
+            with Timing(f"[INFO] {file} processed in: ", DEBUG >= 1):
                 ext, df = file.split(".")[-1], None
                 # TODO: See what to do with the Instruction datasets, for now just skip them
                 if ext == "csv": df = _process_csv(f"{data_src_dir}/{fd}/{file}")
@@ -142,12 +168,12 @@ def export_processed_datasets(data_src_dir: str, data_dst_dir: str):
         create_dir(f"{data_dst_dir}/{fd}")
         for file in files_map[fd]:
             print(f"[INFO] Exporting {file} to SQL ({db_uri}) ...")
-            with Timing(f"[INFO] {file} exported in: "):
+            with Timing(f"[INFO] {file} exported in: ", DEBUG >= 1):
                 df = pd.read_csv(f"{data_src_dir}/{fd}/{file}")
                 all_dfs.append(df)
                 df.to_sql(file.replace(".csv", ""), conn, if_exists="replace", index=False)
     print(f"[INFO] Exporting all datasets to SQL ({db_uri}) ...")
-    with Timing("[INFO] All datasets exported in: "):
+    with Timing("[INFO] All datasets exported in: ", DEBUG >= 1):
         pd.concat(all_dfs).to_sql("all_datasets", conn, if_exists="replace", index=False)
     conn.close()
 

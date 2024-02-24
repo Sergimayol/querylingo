@@ -7,6 +7,7 @@ import os, time, contextlib, cProfile, pstats, urllib3, json
 DEBUG = int(os.getenv("DEBUG", 0)) # 0, ..., 3
 CACHE_DIR = os.getenv("CACHE_DIR", os.path.expanduser("~/.cache"))
 DEVICE = os.getenv("DEVICE", "cpu") # "cpu" or "cuda"
+WANDB = bool(os.getenv("WANDB", 0)) # "True" or "False" | "1" or "0"
 
 def fetch_url(url: str, filename: str = None, buffer_size: int = 16384, force_download: bool = False) -> str:
     if not force_download and filename is not None and os.path.exists(filename): return filename
