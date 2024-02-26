@@ -4,7 +4,7 @@ from typing import List, Optional, Dict
 from safetensors import safe_open
 import os, time, contextlib, cProfile, pstats, urllib3, json
 
-DEBUG = int(os.getenv("DEBUG", 0)) # 0, ..., 3
+DEBUG = int(os.getenv("DEBUG", 0)) # 0, ..., 4
 CACHE_DIR = os.getenv("CACHE_DIR", os.path.expanduser("~/.cache"))
 DEVICE = os.getenv("DEVICE", "cpu") # "cpu" or "cuda"
 WANDB = bool(os.getenv("WANDB", 0)) # "True" or "False" | "1" or "0"

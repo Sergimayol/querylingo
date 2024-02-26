@@ -30,7 +30,7 @@
 from typing import Dict, Literal
 from torch import tril, ones
 from torch.nn import Module, Linear, GELU, LayerNorm, Embedding, ModuleList
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
+from transformers import GPT2LMHeadModel, GPT2Tokenizer, AutoTokenizer, MistralForCausalLM
 
 from .config import ModelConfig
 from utils import CACHE_DIR
@@ -80,7 +80,31 @@ class GPT2Wrapper(Module):
     def __init__(self, checkpoint: Literal["gpt2", "gpt2-large", "gpt2-medium", "gpt2-xl"] = "gpt2"):
         super(GPT2Wrapper, self).__init__()
         self.model = GPT2LMHeadModel.from_pretrained(checkpoint, cache_dir=CACHE_DIR)
-        self.tokenizer: GPT2Tokenizer = GPT2Tokenizer.from_pretrained(checkpoint)
+        self.tokenizer: GPT2Tokenizer = GPT2Tokenizer.from_pretrained(checkpoint, cache_dir=CACHE_DIR, use_fast=True)
+
+    def forward(self, input_ids, **kwargs):
+        return self.model(input_ids, **kwargs)
+
+    def generate(self, input_ids, attention_mask, max_length=50):
+        # TODO: Change this to a custom implementation
+        return self.model.generate(input_ids, attention_mask=attention_mask, max_length=max_length)
+
+    def decode(self, input_ids):
+        return self.tokenizer.decode(input_ids, skip_special_tokens=True)
+
+    def encode(self, text) -> Dict:
+        return self.tokenizer.encode(text, return_tensors="pt")
+
+    def max_length(self) -> int:
+        return self.model.config.n_positions
+
+
+class MistralWrapper(Module):
+    def __init__(self, checkpoint: Literal["Mistral-7B-v0.1", "Mistral-7B-Instruct-v0.1", "Mistral-7B-Instruct-v0.2"] = "Mistral-7B-v0.1"):
+        super(MistralWrapper, self).__init__()
+        checkpoint = f"mistralai/{checkpoint}"
+        self.model = MistralForCausalLM.from_pretrained(checkpoint, cache_dir=CACHE_DIR)
+        self.tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 
     def forward(self, input_ids, **kwargs):
         return self.model(input_ids, **kwargs)

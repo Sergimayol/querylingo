@@ -129,3 +129,5 @@ cython_debug/
 *.bin
 **/tests/**
 *keys*
+**/test_trainer/**
+**/wandb/**

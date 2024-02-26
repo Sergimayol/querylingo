@@ -28,37 +28,31 @@
     - https://github.com/defog-ai/sql-eval
     - https://github.com/salesforce/WikiSQL/raw/master/data.tar.bz2
 """
-import argparse, pandas as pd, re, sqlite3, torch
+import argparse, pandas as pd, re, sqlite3
 from typing import Any, Dict, List, Optional, Tuple
 from transformers import PreTrainedTokenizer
-from utils import Timing, fetch_url, load_json, create_dir, assert_dir, tree_files, load_jsonl, DEBUG
 from torch.utils.data import Dataset
+from utils import Timing, fetch_url, load_json, create_dir, assert_dir, tree_files, load_jsonl, DEBUG
 
 
 class TextToSQLDataset(Dataset):
-    def __init__(self, file: str, tokenizer: PreTrainedTokenizer):
+    def __init__(self, file: str, tokenizer: PreTrainedTokenizer, max_length: int = 512):
         self.content = pd.read_csv(file)
         self.tokenizer = tokenizer
+        self.max_length = max_length
 
     def __len__(self): return len(self.content)
+    def __str__(self): return f"<{self.__class__.__name__} ({len(self.content)}) items>"
 
     def __getitem__(self, idx):
+        if DEBUG >= 4: print(f"[{self.__class__.__name__}] Getting item {idx}...")
         row = self.content.iloc[idx]
-        input = f"###question: {row['question']} ###context: {row['context']}"
-        target = f" ###answer: {row['anwser']}<EOQ>"
-        inputs, targets  = self.tokenizer(input, return_tensors="pt"), self.tokenizer(target, return_tensors="pt") 
-        inputs, targets = inputs["input_ids"], targets["input_ids"]
-        # [(input_toks, target_toks[:i]), ..., (input_toks+target_toks[len(target_toks-1)], target_toks[-1])]
-        t_inputs, t_targets = [], []
-        for i in range(0, len(targets[0])):
-            t_inputs.append((torch.cat([inputs[0], targets[0][:i]]),) if i > 1 else (inputs[0],))
-            t_targets.append((targets[0][i],))
-        if DEBUG >= 4:
-            for i in range(len(t_inputs)):
-                print(f"Input: {self.tokenizer.decode(t_inputs[i][0])}")
-                print(f"Target: {self.tokenizer.decode(t_targets[i][0])}")
-        return t_inputs, t_targets
-
+        data = f"###question: {row['question']} ###context: {row['context']} <EOQ> ###answer: {row['anwser']} </EOQ>"
+        self.tokenizer.add_tokens(["<EOQ>", "</EOQ>"])
+        self.tokenizer.pad_token = self.tokenizer.eos_token
+        tokens = self.tokenizer(data, return_tensors="pt", max_length=self.max_length, truncation=True, padding="max_length")
+        if DEBUG > 4: print(f"[{self.__class__.__name__}] Tokens: {tokens['input_ids'][:3]}...{tokens['input_ids'][-3:]}")
+        return tokens
 
 # SQL instructions in form of system prompts
 class SystemPromptDataset(Dataset):

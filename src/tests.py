@@ -1,8 +1,100 @@
 # pip install -q transformers accelerate
-import os, warnings, torch, torch.nn as nn  # noqa: E401
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
+import os, warnings, torch, torch.nn as nn, transformers  # noqa: E401
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer, TextGenerationPipeline  # noqa: E401
 from utils import Timing, load_safetenors
 from safetensors import safe_open
+warnings.filterwarnings("ignore")
+
+model = "machinists/Mistral-7B-SQL"
+
+tokenizer = AutoTokenizer.from_pretrained(model, cache_dir=os.path.join("D:", "models"))
+pipeline: TextGenerationPipeline = transformers.pipeline(
+    "text-generation",
+    model=model,
+    tokenizer=tokenizer,
+    torch_dtype=torch.bfloat16,
+    trust_remote_code=True,
+    device_map="auto",
+    framework="pt",
+)
+table_schema = "CREATE TABLE table_1341586_19 (district VARCHAR, incumbent VARCHAR)"
+table_schema = 'CREATE TABLE "table1_1000181_1" ( "state_territory" text, "text_background_colour" text, "format" text, "current_slogan" text, "current_series" text, "notes" text );'
+table_schema = "CREATE TABLE head (head_id INTEGER, age INTEGER); CREATE TABLE department (head_id INTEGER, name TEXT);"
+question = "how many district with incumbent being lindy boggs?"
+question = "Determine the number of unique formats per each type of notes for South Australia, displaying the top 3 note types with the most unique formats."
+question = "How many heads of the departments are older than 56 from the department 'HR'?"
+system_msg = f" Generate a correct SQL query from the following database schema. \n {table_schema} "
+
+prompt = f"<s>[INST] {system_msg} \n{question} [/INST]"
+sequences = pipeline(
+    prompt,
+    max_length=1000,
+    do_sample=True,
+    top_k=10,
+    num_return_sequences=1,
+    eos_token_id=tokenizer.eos_token_id,
+    streamer=TextStreamer(tokenizer),
+)
+print("\n\n")
+for seq in sequences:
+    print(f"Result: {seq['generated_text']}")
+exit()
+
+from datasets import load_dataset
+from transformers import AutoTokenizer
+
+dataset = load_dataset("yelp_review_full")
+
+
+tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+
+def tokenize_function(examples):
+    return tokenizer(examples["text"], padding="max_length", truncation=True)
+
+
+tokenized_datasets = dataset.map(tokenize_function, batched=True)
+
+small_train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(1000))
+small_eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(1000))
+
+from transformers import AutoModelForSequenceClassification
+
+model = AutoModelForSequenceClassification.from_pretrained("bert-base-cased", num_labels=5, cache_dir="D:models")
+from transformers import TrainingArguments
+
+training_args = TrainingArguments(output_dir="test_trainer")
+import numpy as np
+from datasets import load_metric
+
+metric = load_metric("accuracy")
+
+
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    return metric.compute(predictions=predictions, references=labels)
+
+
+from transformers import TrainingArguments, Trainer
+
+training_args = TrainingArguments(
+    output_dir="test_trainer",
+    evaluation_strategy="epoch",
+    num_train_epochs=10,
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=16,
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=small_train_dataset,
+    eval_dataset=small_eval_dataset,
+    compute_metrics=compute_metrics,
+)
+
+trainer.train()
 
 """
 tensors = {}
