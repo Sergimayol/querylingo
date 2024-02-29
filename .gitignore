@@ -127,7 +127,7 @@ cython_debug/
 
 *.safetensors
 *.bin
-**/tests/**
 *keys*
 **/test_trainer/**
 **/wandb/**
+**/results/**

@@ -25,6 +25,8 @@
     - https://huggingface.co/openai-community/gpt2-large
     - https://huggingface.co/openai-community/gpt2-medium
     - https://huggingface.co/openai-community/gpt2-xl
+    - https://huggingface.co/google/gemma-2b
+    - https://huggingface.co/google/gemma-2b-it
 """
 
 from typing import Dict, Literal
@@ -75,7 +77,6 @@ class Transformer(Module):
         self.ln_f = LayerNorm(self.n_embd, eps=config.eps)
 
 
-# GPT2 wrapper from HuggingFace
 class GPT2Wrapper(Module):
     def __init__(self, checkpoint: Literal["gpt2", "gpt2-large", "gpt2-medium", "gpt2-xl"] = "gpt2"):
         super(GPT2Wrapper, self).__init__()

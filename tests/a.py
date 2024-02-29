@@ -7,7 +7,6 @@ import numpy as np
 from datasets import load_dataset, load_metric
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer
 
-os.environ["CACHE_DIR"] = "D:models"
 from utils import CACHE_DIR
 
 dataset = load_dataset("kaxap/llama2-sql-instruct")
