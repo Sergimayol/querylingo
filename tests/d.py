@@ -1,10 +1,25 @@
+"""
+DEBUG=4 CACHE_DIR=/mnt/d/models/ PYTHONPATH="src" python tests/d.py
+"""
+
 import os, wandb, torch
 from datasets import load_dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, TrainingArguments, pipeline, LlamaTokenizer, LlamaForCausalLM, AutoConfig
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    TrainingArguments,
+    pipeline,
+    LlamaTokenizer,
+    LlamaForCausalLM,
+    AutoConfig,
+    TextGenerationPipeline,
+    TextStreamer,
+)
 from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
 from trl import SFTTrainer
 
-from utils import CACHE_DIR, WEIGHTS
+from utils import CACHE_DIR, WEIGHTS, DEBUG
 
 "b-mc2/sql-create-context"
 dataset = load_dataset("ChrisHayduk/Llama-2-SQL-Dataset", split="train")
@@ -12,25 +27,29 @@ eval_dataset = load_dataset("ChrisHayduk/Llama-2-SQL-Dataset", split="eval")
 
 
 def format_prompt(examples):
-    return f"{examples['input']} {examples['output']}"
+    return {"prompt": f"{examples['input']} {examples['output']}"}
 
 
-dataset = dataset.map(format_prompt)
-eval_dataset = eval_dataset.map(format_prompt)
+dataset = dataset.map(format_prompt).select(range(10000))
+eval_dataset = eval_dataset.map(format_prompt).select(range(500))
 
-base_model = "NousResearch/Llama-2-7b-chat-hf"
-base_model = "Felladrin/Llama-68M-Chat-v1"
-base_model = "openlm-research/open_llama_3b"
-base_model = "harborwater/open-llama-3b-everythingLM-2048"
+# base_model = "NousResearch/Llama-2-7b-chat-hf"
+# base_model = "Felladrin/Llama-68M-Chat-v1"
+# base_model = "openlm-research/open_llama_3b"
+# base_model = "harborwater/open-llama-3b-everythingLM-2048"
+base_model = "openai-community/gpt2"
 # Fine-tune model name
-new_model = "llama-2-7b-platypus"
+new_model = "llama-2-68M-sql-coder"
 # tokenizer = LlamaTokenizer.from_pretrained(base_model, cache_dir=CACHE_DIR)
 tokenizer = AutoTokenizer.from_pretrained(base_model, cache_dir=CACHE_DIR)
 # In Llama2 we dont have the padding token which is a very big problem, because we have a dataset with different number of tokens in each row.
 # So, we need to pad it so they all have the same length and here i am using end of sentence token and this will have an impact on the generation of our model
 # I am using End of Sentence token for fine-tuning
 tokenizer.pad_token = tokenizer.eos_token
-tokenizer.padding_side = "right"
+if any(k in base_model for k in ("gpt", "opt", "bloom")):
+    tokenizer.padding_side = "left"
+else:
+    tokenizer.padding_side = "right"
 
 
 bnb_config = BitsAndBytesConfig(
@@ -58,16 +77,22 @@ peft_config = LoraConfig(
 )
 
 
+# Load base moodel
 def get_model(model: str, bnb_conf: BitsAndBytesConfig, with_weights: bool) -> AutoModelForCausalLM:
+    if DEBUG >= 3:
+        print(f"Loading model {model} with weights {with_weights}")
     return (
         AutoModelForCausalLM.from_pretrained(model, quantization_config=bnb_conf, device_map={"": 0}, cache_dir=CACHE_DIR)
         if with_weights
-        else AutoModelForCausalLM.from_config(AutoConfig.from_pretrained(model, cache_dir=CACHE_DIR))
+        else AutoModelForCausalLM.from_config(AutoConfig.from_pretrained(model, quantization_config=bnb_conf, cache_dir=CACHE_DIR))
     )
 
 
 # Load base moodel
 model = get_model(base_model, bnb_config, WEIGHTS)
+
+if DEBUG >= 3:
+    print(f"Model loaded: {model}")
 
 model.config.use_cache = False
 model.config.pretraining_tp = 1
@@ -76,14 +101,17 @@ model.config.pretraining_tp = 1
 # prepare_model_for_kbit_training---> This function basically helps to built the best model possible
 model = prepare_model_for_kbit_training(model)
 
+if DEBUG >= 3:
+    print(f"Model loaded: {model}")
+
 training_arguments = TrainingArguments(
     output_dir="./results",
-    num_train_epochs=2,  # 3,5 good for the Llama 2 Model
-    per_device_train_batch_size=8,  # Number of batches that we are going to take for every step
+    num_train_epochs=15,  # 3,5 good for the Llama 2 Model
+    per_device_train_batch_size=4,  # Number of batches that we are going to take for every step
     gradient_accumulation_steps=1,
     evaluation_strategy="steps",  # Not helpful because we donot want to evaluate the model we just want to train it
-    eval_steps=1000,  # Evaluate the model after every 1000 steps
-    logging_steps=1000,
+    eval_steps=500,  # Evaluate the model after every 1000 steps
+    logging_steps=500,
     optim="paged_adamw_8bit",  # Adam Optimizer we will be using but a version that is paged and in 8 bits, so it will lose less memory
     learning_rate=2e-4,
     lr_scheduler_type="linear",
@@ -100,7 +128,7 @@ trainer = SFTTrainer(
     train_dataset=dataset,
     eval_dataset=eval_dataset,  # No separate evaluation dataset, i am using the same dataset
     peft_config=peft_config,
-    dataset_text_field="input",
+    dataset_text_field="prompt",
     max_seq_length=1024,  # In dataset creation we put a threshold 2k for context length (input token limit) but we dont have enough VRAM unfortunately it will take a lot of VRAM to put everything into memory so we are just gonna stop at 512
     tokenizer=tokenizer,
     args=training_arguments,
@@ -114,10 +142,27 @@ trainer.model.save_pretrained(new_model)
 
 wandb.finish()
 
-
-instruction = "Below is an instruction that describes a SQL generation task, paired with an input that provides further context about the available table schemas. Write SQL code that appropriately answers the request. ### Instruction: What is the release date of Milk and Money? ### Input: CREATE TABLE table_name_50 (release_date VARCHAR, title VARCHAR) ### Response:"
-# Using Pipeline from the hugging face
-pipe = pipeline(task="text-generation", model=model, tokenizer=tokenizer, max_length=256)
-result = pipe(instruction)
-# Trim the response, remove instruction manually
-print(result[0]["generated_text"][len(instruction) :])
+pipe = pipeline(
+    "text-generation",
+    model=model,
+    tokenizer=tokenizer,
+    torch_dtype=torch.bfloat16,
+    trust_remote_code=True,
+    device_map="auto",
+    framework="pt",
+)
+while 1:
+    print("Enter instruction: ")
+    inst = input()
+    if inst == "exit":
+        break
+    sequences = pipe(
+        inst,
+        max_length=1024,
+        do_sample=True,
+        top_k=10,
+        num_return_sequences=1,
+        eos_token_id=tokenizer.eos_token_id,
+        streamer=TextStreamer(tokenizer),
+    )
+    print(sequences)

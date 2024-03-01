@@ -105,14 +105,14 @@ def _process_csv(file: str) -> Optional[pd.DataFrame]:
         df["extra"] = df[cols[3:]].apply(lambda x: " ".join(x.dropna().astype(str)), axis=1)
         df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
     else: df["extra"] = "NULL"
-    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "anwser"}, inplace=True)
+    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "answer"}, inplace=True)
     return df
 
 def _process_json(file: str) -> pd.DataFrame:
     df = pd.read_json(file)
     cols = df.columns
     df["extra"] = "NULL"
-    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "anwser"}, inplace=True)
+    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "answer"}, inplace=True)
     return df
 
 def _process_jsonl(file: str) -> Optional[pd.DataFrame]:
@@ -122,14 +122,14 @@ def _process_jsonl(file: str) -> Optional[pd.DataFrame]:
         if "Questions" in cols:
             df["extra"] = "NULL"
             df["context"] = "NULL"
-            df.rename(columns={"Questions": "question", cols[1]: "anwser"}, inplace=True)
-            return df[["question", "context", "anwser", "extra"]]
+            df.rename(columns={"Questions": "question", cols[1]: "answer"}, inplace=True)
+            return df[["question", "context", "answer", "extra"]]
         else: return None # Unknown format
     if len(cols) > 3:
         df["extra"] = df[cols[3:]].apply(lambda x: " ".join(x.dropna().astype(str)), axis=1)
         df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
     else: df["extra"] = "NULL"
-    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "anwser"}, inplace=True)
+    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "answer"}, inplace=True)
     return df
 
 def _process_parquet(file: str) -> Optional[pd.DataFrame]:
@@ -141,7 +141,7 @@ def _process_parquet(file: str) -> Optional[pd.DataFrame]:
         df = pd.concat([df[cols[:3]], df["extra"]], axis=1)
     else: df["extra"] = "NULL"
     df = df[[cols[0], cols[2], cols[1], "extra"]]
-    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "anwser"}, inplace=True)
+    df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "answer"}, inplace=True)
     return df
 
 def process_datasets(data_src_dir: str, data_dst_dir: str):
@@ -178,15 +178,16 @@ def export_processed_datasets(data_src_dir: str, data_dst_dir: str):
             with Timing(f"[INFO] {file} exported in: ", DEBUG >= 1):
                 df = pd.read_csv(f"{data_src_dir}/{fd}/{file}")
                 all_dfs.append(df)
-                df.to_sql(file.replace(".csv", ""), conn, if_exists="replace", index=False)
+                df.to_sql(file.replace(".csv", ""), conn, if_exists="replace")
     print(f"[INFO] Exporting all datasets to SQL ({db_uri}) ...")
     with Timing("[INFO] All datasets exported in: ", DEBUG >= 1):
-        pd.concat(all_dfs).to_sql("all_datasets", conn, if_exists="replace", index=False)
+        pd.concat(all_dfs).to_sql("all_datasets", conn, if_exists="replace")
     conn.close()
 
 
 if __name__ == "__main__":
     args = get_args()
+    print(f"[INFO] Debug level: {DEBUG}")
     if args.download != "none":
         dataset_endpoints = load_json("data/dataset_endpoints.json")
         hf_ds = dataset_endpoints["huggingface-datasets"]["datasets"]

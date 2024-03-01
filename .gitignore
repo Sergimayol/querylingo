@@ -131,3 +131,5 @@ cython_debug/
 **/test_trainer/**
 **/wandb/**
 **/results/**
+**/models/**
+!**/models/.gitkeep
