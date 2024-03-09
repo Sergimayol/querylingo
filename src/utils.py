@@ -47,9 +47,10 @@ def write_sf_keys(file: str, tensors: Dict[str, Tensor], verbose=False) -> None:
     with open(file, "w") as f:
         t = tqdm(tensors.keys(), desc="Writing keys", disable=not verbose)
         f.write("\n".join([f"{key}: {tensors[key].size()}" for key in t]))
-def apply_parallel(func, data, workers=WORKERS, verbose=False) -> Union[Generator[Union[Any, Tuple[None, Any, None]]], List[Any]]:
+def apply_parallelization(func, data, workers=WORKERS, verbose=False) -> List[Any]:
     from joblib import Parallel, delayed
-    return Parallel(n_jobs=workers, verbose=verbose)(delayed(func)(d) for d in data)
+    print(f"Running {func.__name__} in parallel with {workers} workers")
+    return Parallel(n_jobs=workers, verbose=verbose)(delayed(func)(*d) for d in data)
 
 # https://github.com/tinygrad/tinygrad/blob/ee25f732831b39c64698f8728cfe338ba9662866/tinygrad/helpers.py#L96
 class Timing(contextlib.ContextDecorator):

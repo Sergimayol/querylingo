@@ -32,7 +32,7 @@ import argparse, pandas as pd, re, sqlite3
 from typing import Any, Dict, List, Optional, Tuple
 from transformers import PreTrainedTokenizer
 from torch.utils.data import Dataset
-from utils import Profiling, Timing, fetch_url, load_json, create_dir, assert_dir, tree_files, load_jsonl, apply_parallel, DEBUG
+from utils import WORKERS, DEBUG, Profiling, Timing, fetch_url, load_json, create_dir, assert_dir, tree_files, load_jsonl, apply_parallelization
 
 
 class TextToSQLDataset(Dataset):
@@ -138,24 +138,32 @@ def _process_parquet(file: str) -> Optional[pd.DataFrame]:
     df.rename(columns={cols[0]: "question", cols[1]: "context", cols[2]: "answer"}, inplace=True)
     return df
 
+def _process_dataset(data_src_dir: str, data_dst_dir: str, fd: str, file: str):
+    create_dir(f"{data_dst_dir}/{fd}")
+    if DEBUG >= 2: print(f"[INFO] Processing {file}...")
+    with Timing(f"[INFO] {file} processed in: ", enabled=DEBUG >= 1):
+        ext, df = file.split(".")[-1], None
+        # TODO: See what to do with the Instruction datasets, for now just skip them
+        if ext == "csv": df = _process_csv(f"{data_src_dir}/{fd}/{file}")
+        elif ext == "json": df = _process_json(f"{data_src_dir}/{fd}/{file}")
+        elif ext == "jsonl": df = _process_jsonl(f"{data_src_dir}/{fd}/{file}")
+        elif ext == "parquet": df = _process_parquet(f"{data_src_dir}/{fd}/{file}")
+        else: pass # Skip unknown formats
+        if df is not None: df.to_csv(f"{data_dst_dir}/{fd}/{file.replace(f'.{ext}', '.csv')}", index=False)
+        else: print(f"[WARN] Unable to process {file}...")
+
+
 def process_datasets(data_src_dir: str, data_dst_dir: str):
     data_src_dir = data_src_dir + "/raw"
     assert_dir(data_src_dir)
     files_map = tree_files(data_src_dir, exclude=["raw"]) 
-    for fd in files_map:
-        create_dir(f"{data_dst_dir}/{fd}")
-        for file in files_map[fd]:
-            if DEBUG >= 2: print(f"[INFO] Processing {file}...")
-            with Timing(f"[INFO] {file} processed in: ", enabled=DEBUG >= 1):
-                ext, df = file.split(".")[-1], None
-                # TODO: See what to do with the Instruction datasets, for now just skip them
-                if ext == "csv": df = _process_csv(f"{data_src_dir}/{fd}/{file}")
-                elif ext == "json": df = _process_json(f"{data_src_dir}/{fd}/{file}")
-                elif ext == "jsonl": df = _process_jsonl(f"{data_src_dir}/{fd}/{file}")
-                elif ext == "parquet": df = _process_parquet(f"{data_src_dir}/{fd}/{file}")
-                else: pass # Skip unknown formats
-                if df is not None: df.to_csv(f"{data_dst_dir}/{fd}/{file.replace(f'.{ext}', '.csv')}", index=False)
-                else: print(f"[WARN] Unable to process {file}...")
+    if WORKERS > 1:
+        for fd in files_map:
+            apply_parallelization(_process_dataset, [(data_src_dir, data_dst_dir, fd, file) for file in files_map[fd]], verbose=DEBUG >= 2, workers=WORKERS)
+    else:
+        for fd in files_map:
+            for file in files_map[fd]:
+                _process_dataset(data_src_dir, data_dst_dir, fd, file)
 
 def export_processed_datasets(data_src_dir: str, data_dst_dir: str):
     data_src_dir = data_src_dir + "/processed"
