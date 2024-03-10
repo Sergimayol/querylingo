@@ -8,6 +8,8 @@ The main goal of this project is to create a tool that can parse natural languag
 
 ## Getting Started
 
+-   Create datasets:
+
 ```bash
 WORKERS=8 DEBUG=3 python src/data.py -dw -d /mnt/d/tfg/ -e /mnt/d/tfg/processed/hf/ /mnt/d/tfg/processed/ -p -s jsonl -cd /mnt/d/tfg/processed/datasets.sqlite /mnt/d/tfg/processed/datasets/
 ```
