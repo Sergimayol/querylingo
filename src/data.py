@@ -29,7 +29,7 @@
     - https://github.com/salesforce/WikiSQL/raw/master/data.tar.bz2
 """
 import argparse, pandas as pd, re, sqlite3
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from utils import WORKERS, DEBUG, CACHE, Profiling, Timing, df_to_jsonl, fetch_url, load_json, create_dir, assert_dir, read_file, tree_files, load_jsonl, apply_parallelization
 
 
@@ -166,6 +166,16 @@ def export_processed_datasets(data_src_dir: str, data_dst_dir: str):
         pd.concat([df for df, _ in all_dfs], ignore_index=True).to_sql("all_datasets", conn, if_exists="replace")
     conn.close()
 
+def _save_dataset_wrapper(args: Tuple[str, Union[sqlite3.Connection, str], str, str]): return _save_dataset(*args)
+def _save_dataset(table: str, conn: Union[sqlite3.Connection, str], data_dst_dir: str, save: str = "jsonl"):
+    with Timing(f"create_dataset -> {table} created in: ", enabled=DEBUG >= 1):
+        if DEBUG >= 2: print(f"[INFO] Creating {table}...")
+        if isinstance(conn, str): conn = sqlite3.connect(conn)
+        df = pd.read_sql(f"SELECT * FROM {table}", conn)
+        if save == "jsonl": df_to_jsonl(df, f"{data_dst_dir}/{table}.jsonl", index=False)
+        else: df.to_csv(f"{data_dst_dir}/{table}.csv", index=False)
+        if isinstance(conn, str): conn.close()
+
 def create_dataset(data_src_dir: str, data_dst_dir: str, save: str = "jsonl"):
     create_dir(data_dst_dir)
     conn = sqlite3.connect(data_src_dir)
@@ -177,13 +187,10 @@ def create_dataset(data_src_dir: str, data_dst_dir: str, save: str = "jsonl"):
     conn.commit()
     tables: List[Tuple[str]] = cursor.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
     tables = [t[0] for t in tables if t[0].startswith("dataset_")]
-    for table in tables:
-        with Timing(f"create_dataset -> {table} created in: ", enabled=DEBUG >= 1):
-            if DEBUG >= 2: print(f"[INFO] Creating {table}...")
-            # TODO: Apply parallelization
-            df = pd.read_sql(f"SELECT * FROM {table}", conn)
-            if save == "jsonl": df_to_jsonl(df, f"{data_dst_dir}/{table}.jsonl", index=False)
-            else: df.to_csv(f"{data_dst_dir}/{table}.csv", index=False)
+    if WORKERS > 1: apply_parallelization(_save_dataset_wrapper, [(table, data_src_dir, data_dst_dir, save) for table in tables], workers=WORKERS)
+    else:
+        for table in tables:
+            _save_dataset(table, conn, data_dst_dir, save)
     conn.close()
 
 
