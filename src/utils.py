@@ -1,7 +1,7 @@
-from git import Union
+from pandas import DataFrame
 from tqdm import tqdm
 from torch import Tensor, device
-from typing import Any, Generator, List, Optional, Dict, Tuple
+from typing import Any, List, Optional, Dict
 from safetensors import safe_open
 import os, time, contextlib, cProfile, pstats, urllib3, json
 
@@ -11,6 +11,8 @@ DEVICE = os.getenv("DEVICE", "cpu") # "cpu" or "cuda"
 WANDB = bool(os.getenv("WANDB", 0)) # "True" or "False" | "1" or "0"
 WEIGHTS = bool(os.getenv("WEIGHTS", 1)) # "True" or "False" | "1" or "0"
 WORKERS = int(os.getenv("WORKERS", 1)) # 0, 1, 2, ...
+CACHE = bool(os.getenv("CACHE", 1)) # "True" or "False" | "1" or "0"
+
 
 def fetch_url(url: str, filename: str = None, buffer_size: int = 16384, force_download: bool = False) -> str:
     if not force_download and filename is not None and os.path.exists(filename): return filename
@@ -28,29 +30,35 @@ def fetch_url(url: str, filename: str = None, buffer_size: int = 16384, force_do
 
 def read_lines(file: str) -> List[str]:
     with open(file, "r") as f: data = f.read()
-    return data.split("\n")[:-1] if data.endswith("\n") else data.split("\n") 
+    return data.split("\n")[:-1] if data.endswith("\n") else data.split("\n")
+def read_file(file: str) -> str:
+    with open(file, "r") as f:
+        data = f.read()
+    return data
 def pt_device(dev: str = DEVICE) -> device: return device(dev)
 def load_json(file: str) -> Dict: return json.load(open(file, "r"))
 def load_jsonl(file: str) -> List[Any]: return [json.loads(line) for line in read_lines(file)]
 def assert_dir(dir: str) -> None: assert os.path.exists(dir), f"Directory {dir} does not exist"
-def create_dir(dir: str) -> None: os.makedirs(dir) if not os.path.exists(dir) else None
+def create_dir(dir: str) -> None: os.makedirs(dir, exist_ok=True) if not os.path.exists(dir) else None
 def tree_files(dir: str, exclude: List[str] = None) -> Dict[str, List[str]]: return {os.path.basename(folder): files for folder, _, files in os.walk(dir) if os.path.basename(folder) not in exclude}
+def df_to_jsonl(df: DataFrame, file: str, orient="records", lines=True, **kwargs) -> None: df.to_json(file, orient=orient, lines=lines, **kwargs)
 def load_safetenors(file: str, device="cpu", verbose=False) -> Dict[str, Tensor]:
     tensors = {}
     with safe_open(file, framework="pt", device=device) as f:
         t = tqdm(f.keys(), desc="Loading tensors", disable=not verbose)
         for key in t:
-            tensors[key] = f.get_tensor(key) 
+            tensors[key] = f.get_tensor(key)
             t.set_postfix_str(key)
     return tensors
 def write_sf_keys(file: str, tensors: Dict[str, Tensor], verbose=False) -> None:
     with open(file, "w") as f:
         t = tqdm(tensors.keys(), desc="Writing keys", disable=not verbose)
         f.write("\n".join([f"{key}: {tensors[key].size()}" for key in t]))
-def apply_parallelization(func, data, workers=WORKERS, verbose=False) -> List[Any]:
-    from joblib import Parallel, delayed
-    print(f"Running {func.__name__} in parallel with {workers} workers")
-    return Parallel(n_jobs=workers, verbose=verbose)(delayed(func)(*d) for d in data)
+def apply_parallelization(func, data, workers=WORKERS) -> List[Any]:
+    from multiprocessing import Pool
+    with Pool(workers) as p:
+        data = list(p.imap(func, data))
+    return data
 
 # https://github.com/tinygrad/tinygrad/blob/ee25f732831b39c64698f8728cfe338ba9662866/tinygrad/helpers.py#L96
 class Timing(contextlib.ContextDecorator):
