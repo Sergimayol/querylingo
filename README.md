@@ -11,6 +11,30 @@ The main goal of this project is to create a tool that can parse natural languag
 -   Create datasets:
 
 ```bash
+python src/data.py -h
+```
+
+```bash
+usage: data.py [-h] [--data-dir DATA_DIR] [--download] [--process] [--save {csv,jsonl}] [--export EXPORT EXPORT] [--create-dataset CREATE_DATASET CREATE_DATASET]
+
+Download datasets
+
+options:
+  -h, --help            show this help message and exit
+  --data-dir DATA_DIR, -d DATA_DIR
+                        Directory to save the datasets
+  --download, -dw       Download datasets from huggingface
+  --process, -p         Process datasets and save them to CSV or JSONL files depending on the flag --save (default: JSONL)
+  --save {csv,jsonl}, -s {csv,jsonl}
+                        Save processed datasets to CSV or JSONL files
+  --export EXPORT EXPORT, -e EXPORT EXPORT
+                        Export processed datasets to SQL
+  --create-dataset CREATE_DATASET CREATE_DATASET, -cd CREATE_DATASET CREATE_DATASET
+                        Path where to find the SQLite DB and path to create the datasets from the processed datasets to JSON or CSV file depending on the flag --save (default: JSONL)
+```
+
+```bash
+# Example
 WORKERS=8 DEBUG=3 python src/data.py -dw -d /mnt/d/tfg/ -e /mnt/d/tfg/processed/hf/ /mnt/d/tfg/processed/ -p -s jsonl -cd /mnt/d/tfg/processed/datasets.sqlite /mnt/d/tfg/processed/datasets/
 ```
 
