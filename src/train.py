@@ -1,8 +1,8 @@
-"""DEBUG=2 python src/train.py -m openai-community/gpt2 -e 1 -hr Sergi28/text-2-sql-4-llm -d 'Chatbot dataset' -tm ./models/gpt2.tmodules.json"""
+"""WORKERS=10 DEBUG=2 python src/train.py -m openai-community/gpt2 -e 1 -hr Sergi28/text-2-sql-4-llm -d 'System Prompt dataset' -tm ./models/gpt2.tmodules.json"""
 
-from typing import List
+from typing import List, Tuple
 import wandb, torch, argparse, json
-from datasets import load_dataset
+from datasets import load_dataset, Dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, TrainingArguments
 from peft import LoraConfig, prepare_model_for_kbit_training
 from trl import SFTTrainer
@@ -38,6 +38,20 @@ def get_training_args(args: argparse.Namespace):
         optim=args.optim,
         report_to="wandb" if WANDB else None,
     )
+
+
+def get_target_modules(target_modules) -> List[str]:
+    if target_modules is None:
+        return []
+    with open(target_modules, "r") as f:
+        target_modules = json.load(f)["target_modules"]
+    return target_modules
+
+
+def get_dataset(repo: str, dataset: str) -> Tuple[Dataset, Dataset]:
+    dataset: Dataset = load_dataset(repo, dataset)["train"]
+    dataset_split = dataset.train_test_split(test_size=0.2)
+    return dataset_split["train"], dataset_split["test"]
 
 
 def get_args():
@@ -80,21 +94,9 @@ def get_args():
         ],
         required=True,
     )
-    parser.add_argument("--text_field", type=str, default="prompt", help="Text field")
+    parser.add_argument("--text_field", type=str, default="text", help="Text field")
     parser.add_argument("--max_length", type=int, default=1024, help="Max length")
     return parser.parse_args()
-
-
-def format_prompt(examples):
-    return {"prompt": f"{examples['text']}"}
-
-
-def get_target_modules(target_modules) -> List[str]:
-    if target_modules is None:
-        return []
-    with open(target_modules, "r") as f:
-        target_modules = json.load(f)["target_modules"]
-    return target_modules
 
 
 if __name__ == "__main__":
@@ -115,11 +117,7 @@ if __name__ == "__main__":
         print(f"Target modules: {tm}")
     lora_config = LoraConfig(r=8, target_modules=tm, task_type="CAUSAL_LM")
 
-    train_dataset = load_dataset(args.hf_repo, args.dataset)
-    eval_dataset = load_dataset(args.hf_repo, args.dataset)
-
-    train_dataset = train_dataset.map(format_prompt).select(range(10000))
-    eval_dataset = eval_dataset.map(format_prompt).select(range(500))
+    train_dataset, eval_dataset = get_dataset(args.hf_repo, args.dataset)
 
     print(f"Using wandb: {WANDB}")
     wandb.init(mode="disabled" if not WANDB else "online")
