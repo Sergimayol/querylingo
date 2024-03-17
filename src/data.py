@@ -1,33 +1,3 @@
-"""Data sources for SQL-to-text and text-to-SQL datasets.
-* Hugging face: https://huggingface.co/datasets?sort=likes&search=sql
-    - https://huggingface.co/datasets/b-mc2/sql-create-context
-    - https://huggingface.co/datasets/Clinton/Text-to-sql-v1
-    - https://huggingface.co/datasets/ChrisHayduk/Llama-2-SQL-Dataset
-    - https://huggingface.co/datasets/kaxap/pg-wikiSQL-sql-instructions-80k
-    - https://huggingface.co/datasets/bugdaryan/sql-create-context-instruction
-    - https://huggingface.co/datasets/lamini/spider_text_to_sql
-    - https://huggingface.co/datasets/stjarvie/question_to_sql_with_ddl_test_2
-    - https://huggingface.co/datasets/Viswa123/sql_context
-    - https://huggingface.co/datasets/Rams901/sql-create-context-modified
-    - https://huggingface.co/datasets/kaxap/llama2-sql-instruct
-    - https://huggingface.co/datasets/NoobLoader/sql-query-db
-    - https://huggingface.co/datasets/Mohanakrishnan/sql_query_example
-    - https://huggingface.co/datasets/NumbersStation/NSText2SQL
-    - https://huggingface.co/datasets/knowrohit07/know_sql
-    - https://huggingface.co/datasets/kaxap/llama2-sql-instruct-sys-prompt
-    - https://huggingface.co/datasets/kaxap/pg-gpt4SQL-sql-instructions-1k
-    - https://huggingface.co/datasets/teknium/openhermes
-
-* Kaggle: https://www.kaggle.com/datasets?search=sql
-    - https://www.kaggle.com/datasets/thedevastator/dataset-for-developing-natural-language-interfac
-    - https://www.kaggle.com/datasets/kaggle/meta-kaggle-code
-    - https://www.kaggle.com/datasets/thedevastator/understanding-contextual-questions-answers
-
-* Github:
-    - https://github.com/NumbersStationAI/NSQL/blob/main/data_prep/data/download.sh
-    - https://github.com/defog-ai/sql-eval
-    - https://github.com/salesforce/WikiSQL/raw/master/data.tar.bz2
-"""
 import argparse, pandas as pd, re, sqlite3
 from typing import Any, Dict, List, Optional, Tuple, Union
 from utils import WORKERS, DEBUG, CACHE, Profiling, Timing, df_to_jsonl, fetch_url, load_json, create_dir, assert_dir, read_file, tree_files, load_jsonl, apply_parallelization

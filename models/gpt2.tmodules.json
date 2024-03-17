@@ -1,0 +1,3 @@
+{
+    "target_modules": ["c_proj", "c_fc", "c_attn", "lm_head"]
+}

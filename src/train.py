@@ -1,4 +1,7 @@
-import wandb, torch, argparse
+"""DEBUG=2 python src/train.py -m openai-community/gpt2 -e 1 -hr Sergi28/text-2-sql-4-llm -d 'Chatbot dataset' -tm ./models/gpt2.tmodules.json"""
+
+from typing import List
+import wandb, torch, argparse, json
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, TrainingArguments
 from peft import LoraConfig, prepare_model_for_kbit_training
@@ -39,34 +42,63 @@ def get_training_args(args: argparse.Namespace):
 
 def get_args():
     parser = argparse.ArgumentParser(description="Train a model")
-    parser.add_argument("--model", type=str, default="openai-community/gpt2", help="Model to train")
+    parser.add_argument("--model", "-m", type=str, default="openai-community/gpt2", help="Model to train")
     parser.add_argument("--use_kbit", action="store_true", help="Use kbit training")
     # Hyperparameters
-    parser.add_argument("--epochs", type=int, default=25, help="Number of epochs")
-    parser.add_argument("--batch_size", type=int, default=4, help="Batch size")
+    parser.add_argument("--epochs", "-e", type=int, default=25, help="Number of epochs")
+    parser.add_argument("--batch_size", "-b", type=int, default=4, help="Batch size")
     parser.add_argument("--accumulation_steps", type=int, default=8, help="Gradient accumulation steps")
     parser.add_argument("--eval_strategy", type=str, default="epoch", help="Evaluation strategy")
     parser.add_argument("--warmup_steps", type=int, default=2, help="Warmup steps")
     parser.add_argument("--eval_steps", type=int, default=100, help="Evaluation steps")
-    parser.add_argument("--learning_rate", type=float, default=2e-4, help="Learning rate")
+    parser.add_argument("--learning_rate", "-lr", type=float, default=2e-4, help="Learning rate")
     parser.add_argument("--fp16", action="store_true", help="Use fp16")
     parser.add_argument("--logging_steps", type=int, default=10, help="Logging steps")
     parser.add_argument("--output_dir", type=str, default="outputs", help="Output directory")
     parser.add_argument("--optim", type=str, default="paged_adamw_8bit", help="Optimizer")
+    parser.add_argument(
+        "--target_modules",
+        "-tm",
+        type=str,
+        help="Config file target modules for LoRA Config. Default: ./models/lora_target_modules.json",
+    )
     # Dataset
+    parser.add_argument("--hf_repo", "-hr", type=str, help="Hugging Face repository", required=True)
+    parser.add_argument(
+        "--dataset",
+        "-d",
+        type=str,
+        help="Dataset to use. Provide the name between quotes. Example: 'Chatbot dataset'",
+        choices=[
+            "Chatbot dataset",
+            "Chatbot instruct dataset",
+            "System Prompt dataset",
+            "Text completition dataset",
+            "Text generation dataset",
+            "Instruct dataset",
+            "Translation dataset",
+        ],
+        required=True,
+    )
     parser.add_argument("--text_field", type=str, default="prompt", help="Text field")
     parser.add_argument("--max_length", type=int, default=1024, help="Max length")
     return parser.parse_args()
 
 
 def format_prompt(examples):
-    return {"prompt": f"{examples['input']} {examples['output']}"}
+    return {"prompt": f"{examples['text']}"}
+
+
+def get_target_modules(target_modules) -> List[str]:
+    if target_modules is None:
+        return []
+    with open(target_modules, "r") as f:
+        target_modules = json.load(f)["target_modules"]
+    return target_modules
 
 
 if __name__ == "__main__":
     args = get_args()
-
-    dataset = "ChrisHayduk/Llama-2-SQL-Dataset"  # TODO: Change to custom dataset
 
     base_model = args.model
     use_kbit = args.use_kbit
@@ -78,12 +110,13 @@ if __name__ == "__main__":
         print(model)
         print(f"Model has {sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.2f}M parameters")
 
-    # tm = ["q_proj", "o_proj", "k_proj", "v_proj", "gate_proj", "up_proj", "down_proj"]
-    tm = ["c_proj", "c_fc", "c_attn", "lm_head"]
+    tm = get_target_modules(args.target_modules)
+    if DEBUG >= 2:
+        print(f"Target modules: {tm}")
     lora_config = LoraConfig(r=8, target_modules=tm, task_type="CAUSAL_LM")
 
-    train_dataset = load_dataset(dataset, split="train")
-    eval_dataset = load_dataset(dataset, split="eval")
+    train_dataset = load_dataset(args.hf_repo, args.dataset)
+    eval_dataset = load_dataset(args.hf_repo, args.dataset)
 
     train_dataset = train_dataset.map(format_prompt).select(range(10000))
     eval_dataset = eval_dataset.map(format_prompt).select(range(500))
