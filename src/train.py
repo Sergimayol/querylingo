@@ -1,4 +1,7 @@
-"""WORKERS=10 DEBUG=2 python src/train.py -m openai-community/gpt2 -e 1 -hr Sergi28/text-2-sql-4-llm -d 'System Prompt dataset' -tm ./models/gpt2.tmodules.json"""
+"""
+WORKERS=10 DEBUG=2 python src/train.py -m openai-community/gpt2 -e 1 -hr Sergi28/text-2-sql-4-llm -d 'System Prompt dataset' -tm ./models/gpt2.tmodules.json
+WANDB=1 WORKERS=10 DEBUG=2 python src/train.py -m openai-community/gpt2 -hr Sergi28/text-2-sql-4-llm -d 'Text generation dataset' -tm ./models/gpt2.tmodules.json --logging_steps 100 -e 2 --eval_steps 250
+"""
 
 from typing import List, Tuple
 import wandb, torch, argparse, json
@@ -34,9 +37,10 @@ def get_training_args(args: argparse.Namespace):
         learning_rate=args.learning_rate,
         fp16=args.fp16,
         logging_steps=args.logging_steps,
-        output_dir=args.output_dir,
+        output_dir=f"{args.output_dir}_{wandb.run.name}" if WANDB else args.output_dir,
         optim=args.optim,
         report_to="wandb" if WANDB else None,
+        save_steps=250,
     )
 
 
@@ -50,8 +54,8 @@ def get_target_modules(target_modules) -> List[str]:
 
 def get_dataset(repo: str, dataset: str) -> Tuple[Dataset, Dataset]:
     dataset: Dataset = load_dataset(repo, dataset)["train"]
-    dataset_split = dataset.train_test_split(test_size=0.2)
-    return dataset_split["train"], dataset_split["test"]
+    dataset_split = dataset.train_test_split(test_size=0.3)
+    return dataset_split["train"], dataset_split["test"].select(range(500))
 
 
 def get_args():
@@ -62,9 +66,9 @@ def get_args():
     parser.add_argument("--epochs", "-e", type=int, default=25, help="Number of epochs")
     parser.add_argument("--batch_size", "-b", type=int, default=4, help="Batch size")
     parser.add_argument("--accumulation_steps", type=int, default=8, help="Gradient accumulation steps")
-    parser.add_argument("--eval_strategy", type=str, default="epoch", help="Evaluation strategy")
-    parser.add_argument("--warmup_steps", type=int, default=2, help="Warmup steps")
+    parser.add_argument("--eval_strategy", type=str, default="steps", help="Evaluation strategy")
     parser.add_argument("--eval_steps", type=int, default=100, help="Evaluation steps")
+    parser.add_argument("--warmup_steps", type=int, default=2, help="Warmup steps")
     parser.add_argument("--learning_rate", "-lr", type=float, default=2e-4, help="Learning rate")
     parser.add_argument("--fp16", action="store_true", help="Use fp16")
     parser.add_argument("--logging_steps", type=int, default=10, help="Logging steps")
@@ -120,7 +124,8 @@ if __name__ == "__main__":
     train_dataset, eval_dataset = get_dataset(args.hf_repo, args.dataset)
 
     print(f"Using wandb: {WANDB}")
-    wandb.init(mode="disabled" if not WANDB else "online")
+    name = f"{base_model.split('/')[-1]}_{args.dataset}".replace(" ", "_")
+    wandb.init(mode="disabled" if not WANDB else "online", project=name, config=dict(args._get_kwargs()))
 
     trainer = SFTTrainer(
         model=model,
@@ -134,8 +139,9 @@ if __name__ == "__main__":
         dataset_num_proc=WORKERS,
     )
 
-    trainer.train()
+    stats = trainer.train()
 
     trainer.save_model(f"outputs_{wandb.run.id}" if WANDB else "outputs")
 
+    wandb.log(stats)
     wandb.finish()

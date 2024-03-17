@@ -134,3 +134,4 @@ cython_debug/
 **/models/**
 !**/models/.gitkeep
 !**/models/*.tmodules.json
+outputs*/
