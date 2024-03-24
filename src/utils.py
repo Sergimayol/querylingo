@@ -8,10 +8,10 @@ import os, time, contextlib, cProfile, pstats, urllib3, json
 DEBUG = int(os.getenv("DEBUG", 0)) # 0, ..., 4
 CACHE_DIR = os.getenv("CACHE_DIR", os.path.expanduser("~/.cache"))
 DEVICE = os.getenv("DEVICE", "cpu") # "cpu" or "cuda"
-WANDB = bool(os.getenv("WANDB", 0)) # "True" or "False" | "1" or "0"
-WEIGHTS = bool(os.getenv("WEIGHTS", 1)) # "True" or "False" | "1" or "0"
+WANDB = bool(int(os.getenv("WANDB", 0))) # "1" or "0"
+WEIGHTS = bool(int(os.getenv("WEIGHTS", 1))) # "1" or "0"
 WORKERS = int(os.getenv("WORKERS", 1)) # 0, 1, 2, ...
-CACHE = bool(os.getenv("CACHE", 1)) # "True" or "False" | "1" or "0"
+CACHE = bool(int(os.getenv("CACHE", 1))) # "1" or "0"
 
 
 def fetch_url(url: str, filename: str = None, buffer_size: int = 16384, force_download: bool = False) -> str:

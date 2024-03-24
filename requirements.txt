@@ -2,13 +2,12 @@ tqdm==4.66.1
 torch==2.2.0
 torchaudio==2.2.0
 torchvision==0.17.0
-matplotlib==3.8.2
 scikit-learn==1.4.0
 pandas==2.2.0
-torchinfo==1.8.0
 wandb==0.16.2
 argparse==1.4.0
 pyarrow==15.0.0
 safetensors==0.4.2
 trl==0.7.11
 peft==0.8.2
+bitsandbytes

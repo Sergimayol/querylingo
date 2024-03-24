@@ -55,7 +55,8 @@ def get_target_modules(target_modules) -> List[str]:
 def get_dataset(repo: str, dataset: str) -> Tuple[Dataset, Dataset]:
     dataset: Dataset = load_dataset(repo, dataset)["train"]
     dataset_split = dataset.train_test_split(test_size=0.3)
-    return dataset_split["train"], dataset_split["test"].select(range(500))
+    print(f"Train size: {len(dataset_split['train'])}, Test size: {len(dataset_split['test'])}")
+    return dataset_split["train"], dataset_split["test"].select(range(min(1000, len(dataset_split["test"]))))
 
 
 def get_args():
