@@ -1,0 +1,9 @@
+{
+    "target_modules": [
+        "dense_4h_to_h",
+        "dense_h_to_4h",
+        "lm_head",
+        "query_key_value",
+        "dense"
+    ]
+}

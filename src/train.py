@@ -34,6 +34,7 @@ def get_training_args(args: argparse.Namespace):
         evaluation_strategy=args.eval_strategy,
         warmup_steps=args.warmup_steps,
         eval_steps=args.eval_steps,
+        eval_accumulation_steps=args.accumulation_steps,
         learning_rate=args.learning_rate,
         fp16=args.fp16,
         logging_steps=args.logging_steps,
@@ -67,6 +68,7 @@ def get_args():
     parser.add_argument("--epochs", "-e", type=int, default=25, help="Number of epochs")
     parser.add_argument("--batch_size", "-b", type=int, default=4, help="Batch size")
     parser.add_argument("--accumulation_steps", type=int, default=8, help="Gradient accumulation steps")
+    parser.add_argument("--eval_accumulation_steps", type=int, default=8, help="Evaluation accumulation steps")
     parser.add_argument("--eval_strategy", type=str, default="steps", help="Evaluation strategy")
     parser.add_argument("--eval_steps", type=int, default=100, help="Evaluation steps")
     parser.add_argument("--warmup_steps", type=int, default=2, help="Warmup steps")
@@ -86,6 +88,7 @@ def get_args():
     parser.add_argument(
         "--dataset",
         "-d",
+        "post_attention_layernorm",
         type=str,
         help="Dataset to use. Provide the name between quotes. Example: 'Chatbot dataset'",
         choices=[
@@ -114,8 +117,7 @@ if __name__ == "__main__":
     bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.float16)
     model = get_model(base_model, bnb_config)
     if DEBUG >= 2:
-        print(model)
-        print(f"Model has {sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.2f}M parameters")
+        print(model, f"Model has {sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.2f}M parameters", sep="\n")
 
     tm = get_target_modules(args.target_modules)
     if DEBUG >= 2:

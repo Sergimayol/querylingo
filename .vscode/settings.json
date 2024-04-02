@@ -18,5 +18,8 @@
     },
     "[sql]": {
         "editor.defaultFormatter": "adpyke.vscode-sql-formatter"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
     }
 }
