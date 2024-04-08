@@ -1,15 +1,10 @@
-"""
-WORKERS=10 DEBUG=2 python src/train.py -m openai-community/gpt2 -e 1 -hr Sergi28/text-2-sql-4-llm -d 'System Prompt dataset' -tm ./models/gpt2.tmodules.json
-WANDB=1 WORKERS=10 DEBUG=2 python src/train.py -m openai-community/gpt2 -hr Sergi28/text-2-sql-4-llm -d 'Text generation dataset' -tm ./models/gpt2.tmodules.json --logging_steps 100 -e 2 --eval_steps 250
-"""
-
-from typing import List, Tuple
-import wandb, torch, argparse, json
+import wandb, torch, argparse
+from typing import List, Optional, Tuple
 from datasets import load_dataset, Dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, TrainingArguments
 from peft import LoraConfig, prepare_model_for_kbit_training
 from trl import SFTTrainer
-from utils import CACHE_DIR, DEBUG, WORKERS, WANDB
+from utils import CACHE_DIR, DEBUG, WORKERS, WANDB, load_json
 
 
 def get_tokenizer(base_model) -> AutoTokenizer:
@@ -25,8 +20,7 @@ def get_model(model: str, bnb_conf: BitsAndBytesConfig, use_kbit: bool = False) 
 
 
 def get_training_args(args: argparse.Namespace):
-    if DEBUG >= 1:
-        print(f"Hyperparameters: {args}")
+    if DEBUG >= 1: print(f"Hyperparameters: {args}")
     return TrainingArguments(
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
@@ -45,12 +39,8 @@ def get_training_args(args: argparse.Namespace):
     )
 
 
-def get_target_modules(target_modules) -> List[str]:
-    if target_modules is None:
-        return []
-    with open(target_modules, "r") as f:
-        target_modules = json.load(f)["target_modules"]
-    return target_modules
+def get_target_modules(target_modules) -> Optional[List[str]]:
+    return load_json(target_modules)["target_modules"] if target_modules is not None else None
 
 
 def get_dataset(repo: str, dataset: str) -> Tuple[Dataset, Dataset]:
@@ -63,7 +53,7 @@ def get_dataset(repo: str, dataset: str) -> Tuple[Dataset, Dataset]:
 def get_args():
     parser = argparse.ArgumentParser(description="Train a model")
     parser.add_argument("--model", "-m", type=str, default="openai-community/gpt2", help="Model to train")
-    parser.add_argument("--use_kbit", action="store_true", help="Use kbit training")
+    parser.add_argument("--use_kbit", action="store_true", default=True, help="Use kbit training")
     # Hyperparameters
     parser.add_argument("--epochs", "-e", type=int, default=25, help="Number of epochs")
     parser.add_argument("--batch_size", "-b", type=int, default=4, help="Batch size")
@@ -88,7 +78,6 @@ def get_args():
     parser.add_argument(
         "--dataset",
         "-d",
-        "post_attention_layernorm",
         type=str,
         help="Dataset to use. Provide the name between quotes. Example: 'Chatbot dataset'",
         choices=[
@@ -114,14 +103,12 @@ if __name__ == "__main__":
     use_kbit = args.use_kbit
 
     tokenizer = get_tokenizer(base_model)
-    bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.float16)
-    model = get_model(base_model, bnb_config)
-    if DEBUG >= 2:
-        print(model, f"Model has {sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.2f}M parameters", sep="\n")
+    bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.float16, bnb_4bit_use_double_quant=True)
+    model = get_model(base_model, bnb_config, use_kbit)
+    if DEBUG >= 2: print(model, f"Model has {sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.2f}M parameters", sep="\n")
 
     tm = get_target_modules(args.target_modules)
-    if DEBUG >= 2:
-        print(f"Target modules: {tm}")
+    if DEBUG >= 2: print(f"Target modules: {tm}")
     lora_config = LoraConfig(r=8, target_modules=tm, task_type="CAUSAL_LM")
 
     train_dataset, eval_dataset = get_dataset(args.hf_repo, args.dataset)
