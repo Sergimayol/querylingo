@@ -35,3 +35,7 @@ WANDB=1 WORKERS=$(nproc) DEBUG=2 python src/train.py -m bigscience/bloomz-560m -
 WANDB=1 WORKERS=$(nproc) DEBUG=2 python src/train.py -m bigscience/bloomz-560m -hr Sergi28/text-2-sql-4-llm -d 'Translation dataset' -tm ./models/bloom.tmodules.json --logging_steps 100 -e 10 --eval_steps 250 -lr 2e-3
 
 WANDB=1 WORKERS=$(nproc) DEBUG=2 python src/train.py -m keeeeenw/MicroLlama -hr Sergi28/text-2-sql-4-llm -d 'Text generation dataset' -tm ./models/bloom.tmodules.json --logging_steps 100 -e 10 --eval_steps 250
+
+## google/flan-t5-base
+
+WANDB=1 WORKERS=$(nproc) DEBUG=2 python src/train.py -m google/flan-t5-base -hr Sergi28/text-2-sql-4-llm -d 'Translation dataset' -tm ./models/bloom.tmodules.json --logging_steps 100 -e 10 --eval_steps 250
