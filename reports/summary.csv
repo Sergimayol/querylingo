@@ -1,0 +1,23 @@
+name,eval/loss,train/learning_rate,_step,runtime_hms
+fancy-vortex-1 - (bloomz-560m_System_Prompt_dataset),0.4749443233013153,0.00010808386590424936,28500,2h 37m 44s
+generous-wood-3 - (flan-t5-base_Translation_dataset),1.5777439330122434e-05,0.00019270843669994244,19250,19h 41m 49s
+winter-bird-1 - (gpt2-large_Instruct_dataset),0.5127319693565369,0.00019798947748231563,4000,2h 52m 57s
+avid-cosmos-4 - (gpt2-large_System_Prompt_dataset),0.5823996663093567,0.00018545087709465895,4250,0h 16m 58s
+astral-jazz-1 - (gpt2_Instruct_dataset),3.2983438968658447,0.0001847314408465005,31500,5h 37m 32s
+graceful-lake-6 - (gpt2_System_Prompt_dataset),0.46316051483154297,4.485310607759588e-06,31000,1h 17m 58s
+nagus-dukat-12 - (gpt2_Text_generation_dataset),3.247270107269287,0.00018134817857957987,32500,4h 27m 10s
+quiet-lion-1 - (MicroLlama_Instruct_dataset),1.551786184310913,0.00019647741957138303,14500,4h 58m 58s
+lively-deluge-2 - (MicroLlama_Text_generation_dataset),1.7022006511688232,0.001980173457439419,6750,0h 46m 20s
+jolly-waterfall-1 - (MicroLlama_Text_generation_dataset),1.7599588632583618,0.0001978188818544466,7250,0h 47m 43s
+dauntless-pine-2 - (MicroLlama_Translation_dataset),1.5823713541030884,0.00019603270684898888,13750,5h 0m 41s
+floral-wave-1 - (t5-base-finetuned-wikiSQL_Translation_dataset),5.90165029734635e-07,0.0001416536011272749,156500,145h 28m 18s
+divine-tree-1 - (TinyLLama-v0_Chatbot_dataset),4.354540824890137,0.000186396152065241,24750,2h 8m 33s
+lunar-lake-1 - (TinyLLama-v0_Chatbot_instruct_dataset),4.165835380554199,0.00017817272483700993,38250,3h 21m 1s
+nagus-phage-1 - (TinyLLama-v0_Instruct_dataset),4.472071170806885,0.00019161219403724,17250,1h 10m 30s
+warm-rain-3 - (TinyLLama-v0_System_Prompt_dataset),4.706320285797119,4.485310607759588e-07,31000,1h 10m 47s
+rosy-cherry-2 - (TinyLLama-v0_System_Prompt_dataset),4.960893154144287,4.4848077138692685e-08,62250,2h 38m 5s
+swift-music-1 - (TinyLLama-v0_System_Prompt_dataset),4.61225700378418,4.484807713869268e-07,62250,2h 38m 36s
+trill-quark-1 - (TinyLLama-v0_Text_completition_dataset),4.345139503479004,0.0001853068185941866,28000,2h 4m 46s
+radiant-star-2 - (TinyLLama-v0_Text_generation_dataset),4.066645622253418,0.0001840256415345228,56000,3h 2m 57s
+daily-glitter-1 - (TinyLLama-v0_Text_generation_dataset),4.0209503173828125,0.0001838271776450275,56750,3h 6m 1s
+desert-forest-1 - (TinyLLama-v0_Translation_dataset),4.2372846603393555,0.00017916505413156304,36500,5h 2m 6s
