@@ -1,0 +1,26 @@
+{
+    "chatgpt-3.5": {
+        "0": "select * from users where id < 5;",
+        "1": "select u.id, u.name, u.email, o.id as order_id, o.date from users u left join orders o on u.id = o.user_id where u.id < 5;",
+        "2": "select * from orders where date = date('now');",
+        "3": "select * from categories;",
+        "4": "select p.* from products p join categories c on p.category_id = c.id where c.name = 'books';",
+        "5": "select name from users where email like '%@gmail.com';",
+        "6": "select c.name as category_name, count(o.id) as order_count from categories c left join products p on c.id = p.category_id left join orders o on p.id = o.product_id group by c.id, c.name;",
+        "7": "select sum(od.quantity * p.price) as total_revenue from orderdetails od join products p on od.product_id = p.id;",
+        "8": "select o.* from orders o join users u on o.user_id = u.id where u.name = 'jesus';",
+        "9": "select u.id as user_id, u.name as user_name, sum(od.quantity * p.price) as total_spent from users u join orders o on u.id = o.user_id join orderdetails od on o.id = od.order_id join products p on od.product_id = p.id group by u.id, u.name order by total_spent desc limit 1;"
+    },
+    "gemini": {
+        "0": "SELECT * FROM Users WHERE id < 5;",
+        "1": "SELECT * FROM Users WHERE id IN (SELECT user_id FROM Orders WHERE user_id < 5);",
+        "2": "SELECT * FROM Orders WHERE date = date('now');",
+        "3": "SELECT name FROM Categories;",
+        "4": "SELECT p.name, p.price FROM Products AS p INNER JOIN Categories AS c ON p.category_id = c.id WHERE c.name = 'Books';",
+        "5": "SELECT name FROM Users WHERE domain = 'gmail.com';",
+        "6": "SELECT c.name AS category, COUNT(o.id) AS order_count FROM Categories AS c LEFT JOIN Products AS p ON c.id = p.category_id LEFT JOIN Orders AS o ON p.id = o.product_id GROUP BY c.name;",
+        "7": "SELECT SUM(od.quantity * p.price) AS total_revenue FROM OrderDetails AS od INNER JOIN Products AS p ON od.product_id = p.id;",
+        "8": "SELECT * FROM Users WHERE name = 'Jesus';",
+        "9": "SELECT u.name AS user_name, SUM(od.quantity * p.price) AS total_spent FROM Users AS u INNER JOIN Orders AS o ON u.id = o.user_id INNER JOIN OrderDetails AS od ON o.id = od.order_id INNER JOIN Products AS p ON od.product_id = p.id GROUP BY u.id ORDER BY total_spent DESC LIMIT 1;"
+    }
+}
