@@ -1,0 +1,5 @@
+{
+    "input": "Which ones with the users named Jesus?",
+    "context": "",
+    "expected": "SELECT * FROM Users WHERE name = 'Jesus'"
+}

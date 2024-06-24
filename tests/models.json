@@ -1,0 +1,127 @@
+[
+    {
+        "name": "chatdb/natural-sql-7b",
+        "isCausal": true,
+        "isLocal": false
+    },
+    {
+        "name": "defog/sqlcoder-7b-2",
+        "isCausal": true,
+        "isLocal": false
+    },
+    {
+        "name": "mistralai/Mistral-7B-Instruct-v0.2",
+        "isCausal": true,
+        "isLocal": false
+    },
+    {
+        "name": "fancy-vortex-1 - (bloomz-560m_System_Prompt_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "generous-wood-3 - (flan-t5-base_Translation_dataset)",
+        "isCausal": false,
+        "isLocal": true
+    },
+    {
+        "name": "winter-bird-1 - (gpt2-large_Instruct_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "avid-cosmos-4 - (gpt2-large_System_Prompt_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "astral-jazz-1 - (gpt2_Instruct_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "graceful-lake-6 - (gpt2_System_Prompt_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "nagus-dukat-12 - (gpt2_Text_generation_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "quiet-lion-1 - (MicroLlama_Instruct_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "lively-deluge-2 - (MicroLlama_Text_generation_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "jolly-waterfall-1 - (MicroLlama_Text_generation_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "dauntless-pine-2 - (MicroLlama_Translation_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "floral-wave-1 - (t5-base-finetuned-wikiSQL_Translation_dataset)",
+        "isCausal": false,
+        "isLocal": true
+    },
+    {
+        "name": "divine-tree-1 - (TinyLLama-v0_Chatbot_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "lunar-lake-1 - (TinyLLama-v0_Chatbot_instruct_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "nagus-phage-1 - (TinyLLama-v0_Instruct_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "warm-rain-3 - (TinyLLama-v0_System_Prompt_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "rosy-cherry-2 - (TinyLLama-v0_System_Prompt_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "swift-music-1 - (TinyLLama-v0_System_Prompt_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "trill-quark-1 - (TinyLLama-v0_Text_completition_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "radiant-star-2 - (TinyLLama-v0_Text_generation_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "daily-glitter-1 - (TinyLLama-v0_Text_generation_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    },
+    {
+        "name": "desert-forest-1 - (TinyLLama-v0_Translation_dataset)",
+        "isCausal": true,
+        "isLocal": true
+    }
+]

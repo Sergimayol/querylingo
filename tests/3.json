@@ -1,0 +1,5 @@
+{
+    "input": "What are all the Categories available?",
+    "context": "CREATE TABLE Categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL);",
+    "expected": "SELECT DISTINCT(name) FROM Categories"
+}
