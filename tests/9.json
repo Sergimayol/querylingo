@@ -1,5 +1,0 @@
-{
-    "input": "Which user has spent the most and how much?",
-    "context": "CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,email TEXT NOT NULL);CREATE TABLE Orders (id INTEGER PRIMARY KEY AUTOINCREMENT,date DATE NOT NULL,user_id INTEGER,FOREIGN KEY (user_id) REFERENCES Users(id));CREATE TABLE Categories (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL);CREATE TABLE Products (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,price REAL NOT NULL,category_id INTEGER,FOREIGN KEY (category_id) REFERENCES Categories(id));CREATE TABLE OrderDetails (id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER,product_id INTEGER,quantity INTEGER NOT NULL,FOREIGN KEY (order_id) REFERENCES Orders(id),FOREIGN KEY (product_id) REFERENCES Products(id))",
-    "expected": "SELECT u.name, SUM(od.quantity * p.price) AS total_spent FROM Users u JOIN Orders o ON o.user_id = u.id JOIN OrderDetails od ON od.order_id = o.id JOIN Products p ON p.id = od.product_id GROUP BY u.name ORDER BY total_spent DESC LIMIT 1;"
-}

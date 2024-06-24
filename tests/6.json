@@ -1,5 +1,0 @@
-{
-    "input": "From each category, how many orders does each one have?",
-    "context": "CREATE TABLE Categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL); CREATE TABLE Products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, price REAL NOT NULL, category_id INTEGER, FOREIGN KEY (category_id) REFERENCES Categories(id)); CREATE TABLE test (name TEXT, category INT);",
-    "expected": "SELECT c.name, COUNT(c.id) FROM Categories c JOIN Products p ON p.category_id = c.id GROUP BY c.name;"
-}

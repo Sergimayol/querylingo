@@ -1,0 +1,53 @@
+{
+    "0": {
+        "input": "Get all the users where the id is less than 5",
+        "context": "CREATE TABLE Users ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL);",
+        "expected": "SELECT * FROM Users WHERE id < 5"
+    },
+    "1": {
+        "input": "Get all the users where the id is less than 5",
+        "context": "CREATE TABLE Users ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL);\n CREATE TABLE Orders (id INTEGER PRIMARY KEY AUTOINCREMENT, date DATE NOT NULL, user_id INTEGER, FOREIGN KEY (user_id) REFERENCES Users(id));",
+        "expected": "SELECT * FROM Users WHERE id < 5"
+    },
+    "2": {
+        "input": "What are the orders that you have today's date?",
+        "context": "CREATE TABLE Orders (id INTEGER PRIMARY KEY AUTOINCREMENT, date DATE NOT NULL, user_id INTEGER, FOREIGN KEY (user_id) REFERENCES Users(id));",
+        "expected": "SELECT * FROM Orders WHERE DATE = DATE()",
+        "accepted": "SELECT * FROM Orders WHERE DATE = DATE('now')"
+    },
+    "3": {
+        "input": "What are all the Categories available?",
+        "context": "CREATE TABLE Categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL);",
+        "expected": "SELECT DISTINCT(name) FROM Categories"
+    },
+    "4": {
+        "input": "Of all the available products, which ones belong to the 'Books' categories?",
+        "context": "CREATE TABLE Categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL); CREATE TABLE Products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, price REAL NOT NULL, category_id INTEGER, FOREIGN KEY (category_id) REFERENCES Categories(id));",
+        "expected": "SELECT p.* FROM Products p JOIN Categories c ON p.category_id = c.id AND c.name = 'Books';"
+    },
+    "5": {
+        "input": "From all the users that the email is from 'gmail.com', What are their names?",
+        "context": "CREATE TABLE Users ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL);\n CREATE TABLE Orders (id INTEGER PRIMARY KEY AUTOINCREMENT, date DATE NOT NULL, user_id INTEGER, FOREIGN KEY (user_id) REFERENCES Users(id));",
+        "expected": "SELECT name FROM Users u WHERE email LIKE '%@gmail.com'"
+    },
+    "6": {
+        "input": "From each category, how many orders does each one have?",
+        "context": "CREATE TABLE Categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL); CREATE TABLE Products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, price REAL NOT NULL, category_id INTEGER, FOREIGN KEY (category_id) REFERENCES Categories(id)); CREATE TABLE test (name TEXT, category INT);",
+        "expected": "SELECT c.name, COUNT(c.id) FROM Categories c JOIN Products p ON p.category_id = c.id GROUP BY c.name;"
+    },
+    "7": {
+        "input": "How much revenue is earned from all orders?",
+        "context": "CREATE TABLE Orders (id INTEGER PRIMARY KEY AUTOINCREMENT,date DATE NOT NULL,user_id INTEGER, FOREIGN KEY (user_id) REFERENCES Users(id)); CREATE TABLE OrderDetails (id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER,product_id INTEGER,quantity INTEGER NOT NULL,FOREIGN KEY (order_id) REFERENCES Orders(id),FOREIGN KEY (product_id) REFERENCES Products(id));",
+        "expected": "SELECT SUM(od.quantity * p.price) as total_revenue FROM OrderDetails od JOIN Products p ON p.id = od.product_id"
+    },
+    "8": {
+        "input": "Which ones with the users named Jesus?",
+        "context": "",
+        "expected": "SELECT * FROM Users WHERE name = 'Jesus'"
+    },
+    "9": {
+        "input": "Which user has spent the most and how much?",
+        "context": "CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,email TEXT NOT NULL);CREATE TABLE Orders (id INTEGER PRIMARY KEY AUTOINCREMENT,date DATE NOT NULL,user_id INTEGER,FOREIGN KEY (user_id) REFERENCES Users(id));CREATE TABLE Categories (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL);CREATE TABLE Products (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,price REAL NOT NULL,category_id INTEGER,FOREIGN KEY (category_id) REFERENCES Categories(id));CREATE TABLE OrderDetails (id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER,product_id INTEGER,quantity INTEGER NOT NULL,FOREIGN KEY (order_id) REFERENCES Orders(id),FOREIGN KEY (product_id) REFERENCES Products(id))",
+        "expected": "SELECT u.name, SUM(od.quantity * p.price) AS total_spent FROM Users u JOIN Orders o ON o.user_id = u.id JOIN OrderDetails od ON od.order_id = o.id JOIN Products p ON p.id = od.product_id GROUP BY u.name ORDER BY total_spent DESC LIMIT 1;"
+    }
+}

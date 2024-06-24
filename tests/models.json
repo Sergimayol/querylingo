@@ -10,7 +10,7 @@
         "isLocal": false
     },
     {
-        "name": "mistralai/Mistral-7B-Instruct-v0.2",
+        "name": "mixtral-8x7b-instruct",
         "isCausal": true,
         "isLocal": false
     },
