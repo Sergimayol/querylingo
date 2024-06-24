@@ -25,7 +25,7 @@
     },
     "mixtral-8x7b-instruct": {
         "0": "SELECT id, name, email FROM Users WHERE id < 5;",
-        "1": "SELECT Users.id, Users.name, Users.email, Orders.id, Orders.date FROM Users LEFT JOIN Orders ON Users.id = Orders.user_id WHERE Users.id < ",
+        "1": "SELECT Users.id, Users.name, Users.email, Orders.id, Orders.date FROM Users LEFT JOIN Orders ON Users.id = Orders.user_id WHERE Users.id < 5;",
         "2": "SELECT * FROM Orders WHERE date = date('now');",
         "3": "SELECT DISTINCT name FROM Categories;",
         "4": "SELECT Products.id, Products.name, Products.price, Categories.name AS category_name FROM Products JOIN Categories ON Products.category_id = Categories.id WHERE Categories.name = 'Books';",
