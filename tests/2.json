@@ -1,5 +1,6 @@
 {
     "input": "What are the orders that you have today's date?",
     "context": "CREATE TABLE Orders (id INTEGER PRIMARY KEY AUTOINCREMENT, date DATE NOT NULL, user_id INTEGER, FOREIGN KEY (user_id) REFERENCES Users(id));",
-    "expected": "SELECT * FROM Orders WHERE DATE = DATE()"
+    "expected": "SELECT * FROM Orders WHERE DATE = DATE()",
+    "accepted": "SELECT * FROM Orders WHERE DATE = DATE('now')"
 }

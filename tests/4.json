@@ -1,5 +1,5 @@
 {
     "input": "Of all the available products, which ones belong to the 'Books' categories?",
     "context": "CREATE TABLE Categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL); CREATE TABLE Products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, price REAL NOT NULL, category_id INTEGER, FOREIGN KEY (category_id) REFERENCES Categories(id));",
-    "expected": "SELECT * FROM Categories c JOIN Products p ON p.category_id = c.id AND c.name = 'Books';"
+    "expected": "SELECT p.* FROM Products p JOIN Categories c ON p.category_id = c.id AND c.name = 'Books';"
 }
