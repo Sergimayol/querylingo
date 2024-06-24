@@ -22,5 +22,17 @@
         "7": "SELECT SUM(od.quantity * p.price) AS total_revenue FROM OrderDetails AS od INNER JOIN Products AS p ON od.product_id = p.id;",
         "8": "SELECT * FROM Users WHERE name = 'Jesus';",
         "9": "SELECT u.name AS user_name, SUM(od.quantity * p.price) AS total_spent FROM Users AS u INNER JOIN Orders AS o ON u.id = o.user_id INNER JOIN OrderDetails AS od ON o.id = od.order_id INNER JOIN Products AS p ON od.product_id = p.id GROUP BY u.id ORDER BY total_spent DESC LIMIT 1;"
+    },
+    "mixtral-8x7b-instruct": {
+        "0": "SELECT id, name, email FROM Users WHERE id < 5;",
+        "1": "SELECT Users.id, Users.name, Users.email, Orders.id, Orders.date FROM Users LEFT JOIN Orders ON Users.id = Orders.user_id WHERE Users.id < ",
+        "2": "SELECT * FROM Orders WHERE date = date('now');",
+        "3": "SELECT DISTINCT name FROM Categories;",
+        "4": "SELECT Products.id, Products.name, Products.price, Categories.name AS category_name FROM Products JOIN Categories ON Products.category_id = Categories.id WHERE Categories.name = 'Books';",
+        "5": "SELECT name FROM Users WHERE email LIKE '%@gmail.com';",
+        "6": "SELECT Categories.name, COUNT(test.category) AS num_orders FROM Categories LEFT JOIN Products ON Categories.id = Products.category_id LEFT JOIN test ON Products.id = test.category GROUP BY Categories.name;",
+        "7": "SELECT SUM(Products.price * OrderDetails.quantity) AS total_revenue FROM Orders JOIN OrderDetails ON Orders.id = OrderDetails.order_id JOIN Products ON OrderDetails.product_id = Products.id JOIN Users ON Orders.user_id = Users.id;",
+        "8": "SELECT * FROM Orders JOIN Users ON Orders.user_id = Users.id WHERE Users.name = 'Jesus';",
+        "9": "SELECT Users.name, SUM(Products.price * OrderDetails.quantity) AS total_spent FROM Orders JOIN OrderDetails ON Orders.id = OrderDetails.order_id JOIN Products ON OrderDetails.product_id = Products.id JOIN Users ON Orders.user_id = Users.id GROUP BY Orders.user_id ORDER BY total_spent DESC LIMIT 1;"
     }
 }
