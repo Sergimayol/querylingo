@@ -11,3 +11,4 @@ safetensors==0.4.2
 trl==0.7.11
 peft==0.8.2
 bitsandbytes==0.43.0
+manim==0.18.1
