@@ -1,0 +1,28 @@
+,Model,Score
+0,chatgpt-3.5,10
+1,gemini,10
+2,mixtral-8x7b-instruct,10
+3,natural-sql-7b,10
+4,sqlcoder-7b-2,10
+5,fancy-vortex-1 - (bloomz-560m_System_Prompt_dataset),4
+6,generous-wood-3 - (flan-t5-base_Translation_dataset),6
+7,winter-bird-1 - (gpt2-large_Instruct_dataset),3
+8,avid-cosmos-4 - (gpt2-large_System_Prompt_dataset),3
+9,astral-jazz-1 - (gpt2_Instruct_dataset),4
+10,graceful-lake-6 - (gpt2_System_Prompt_dataset),5
+11,nagus-dukat-12 - (gpt2_Text_generation_dataset),4
+12,quiet-lion-1 - (MicroLlama_Instruct_dataset),5
+13,lively-deluge-2 - (MicroLlama_Text_generation_dataset),3
+14,jolly-waterfall-1 - (MicroLlama_Text_generation_dataset),3
+15,dauntless-pine-2 - (MicroLlama_Translation_dataset),5
+16,floral-wave-1 - (t5-base-finetuned-wikiSQL_Translation_dataset),7
+17,divine-tree-1 - (TinyLLama-v0_Chatbot_dataset),4
+18,lunar-lake-1 - (TinyLLama-v0_Chatbot_instruct_dataset),3
+19,nagus-phage-1 - (TinyLLama-v0_Instruct_dataset),4
+20,warm-rain-3 - (TinyLLama-v0_System_Prompt_dataset),5
+21,rosy-cherry-2 - (TinyLLama-v0_System_Prompt_dataset),5
+22,swift-music-1 - (TinyLLama-v0_System_Prompt_dataset),3
+23,trill-quark-1 - (TinyLLama-v0_Text_completition_dataset),4
+24,radiant-star-2 - (TinyLLama-v0_Text_generation_dataset),5
+25,daily-glitter-1 - (TinyLLama-v0_Text_generation_dataset),3
+26,desert-forest-1 - (TinyLLama-v0_Translation_dataset),4
