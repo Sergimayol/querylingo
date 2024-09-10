@@ -81,6 +81,11 @@ options:
   --max_length MAX_LENGTH
                         Max length
 ```
+## Create animations
+
+```shell
+manim -pqh docs/animations/llm.py GeneratingText
+```
 
 ## License
 

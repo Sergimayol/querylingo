@@ -135,4 +135,4 @@ cython_debug/
 !**/models/.gitkeep
 !**/models/*.tmodules.json
 outputs*/
-docs/animations/media
+**/media/**
